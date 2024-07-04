@@ -8,10 +8,9 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.*;
+
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @JsonIdentityInfo(scope = Vehicle.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @PlanningEntity
@@ -24,6 +23,7 @@ public class Vehicle {
     private Location homeLocation;
 
     private LocalDateTime departureTime;
+    private LocalDateTime maxLastVisitDepartureTime;
 
     @JsonIdentityReference(alwaysAsId = true)
     @PlanningListVariable
@@ -32,11 +32,12 @@ public class Vehicle {
     public Vehicle() {
     }
 
-    public Vehicle(String id, int capacity, Location homeLocation, LocalDateTime departureTime) {
+    public Vehicle(String id, int capacity, Location homeLocation, LocalDateTime departureTime, LocalDateTime maxLastVisitDepartureTime) {
         this.id = id;
         this.capacity = capacity;
         this.homeLocation = homeLocation;
         this.departureTime = departureTime;
+        this.maxLastVisitDepartureTime = maxLastVisitDepartureTime;
         this.visits = new ArrayList<>();
     }
 
@@ -74,6 +75,14 @@ public class Vehicle {
 
     public void setVisits(List<Visit> visits) {
         this.visits = visits;
+    }
+
+    public LocalDateTime getMaxLastVisitDepartureTime() {
+        return maxLastVisitDepartureTime;
+    }
+
+    public void setMaxLastVisitDepartureTime(LocalDateTime maxLastVisitDepartureTime) {
+        this.maxLastVisitDepartureTime = maxLastVisitDepartureTime;
     }
 
     // ************************************************************************
@@ -117,9 +126,27 @@ public class Vehicle {
         return lastVisit.getDepartureTime().plusSeconds(lastVisit.getLocation().getDrivingTimeTo(homeLocation));
     }
 
+    @JsonIgnore
+    public long getLastVisitDepartureOverageInMinutes() {
+        if (visits.isEmpty()) {
+            return 0;
+        }
+
+        Visit lastVisit = visits.get(visits.size() - 1);
+        var overage = MINUTES.between(maxLastVisitDepartureTime, lastVisit.getDepartureTime());
+        if (overage < 0) {
+            return 0;
+        }
+        return overage;
+    }
+
+    @JsonIgnore
+    public boolean isLastVisitDepartureTimeOverMax() {
+        return getLastVisitDepartureOverageInMinutes() > 0;
+    }
+
     @Override
     public String toString() {
         return id;
     }
-
 }

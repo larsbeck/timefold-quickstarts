@@ -4,7 +4,9 @@ import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
 import ai.timefold.solver.core.api.score.constraint.ConstraintRef;
 import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
 import ai.timefold.solver.jackson.api.score.analysis.AbstractScoreAnalysisJacksonDeserializer;
+import io.vertx.codegen.format.Case;
 import org.acme.vehiclerouting.solver.VehicleRoutingConstraintProvider;
+import org.acme.vehiclerouting.solver.justifications.MaxLastVisitDepartureJustification;
 import org.acme.vehiclerouting.solver.justifications.MinimizeTravelTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.ServiceFinishedAfterMaxEndTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.VehicleCapacityJustification;
@@ -28,6 +30,8 @@ public class VRPScoreAnalysisJacksonDeserializer extends AbstractScoreAnalysisJa
                 return (Class<ConstraintJustification_>) VehicleCapacityJustification.class;
             case VehicleRoutingConstraintProvider.SERVICE_FINISHED_AFTER_MAX_END_TIME:
                 return (Class<ConstraintJustification_>) ServiceFinishedAfterMaxEndTimeJustification.class;
+            case VehicleRoutingConstraintProvider.MAX_LAST_VISIT_DEPARTURE_TIME:
+                return (Class<ConstraintJustification_>) MaxLastVisitDepartureJustification.class;
             default:
                 throw new UnsupportedOperationException("Deserialization of (%s) constraint not supported, please extend %s."
                         .formatted(constraintRef.constraintName(), this.getClass().getName()));

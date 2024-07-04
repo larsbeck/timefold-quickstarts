@@ -7,6 +7,7 @@ import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
 
 import org.acme.vehiclerouting.domain.Visit;
 import org.acme.vehiclerouting.domain.Vehicle;
+import org.acme.vehiclerouting.solver.justifications.MaxLastVisitDepartureJustification;
 import org.acme.vehiclerouting.solver.justifications.MinimizeTravelTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.ServiceFinishedAfterMaxEndTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.VehicleCapacityJustification;
@@ -16,13 +17,15 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
     public static final String VEHICLE_CAPACITY = "vehicleCapacity";
     public static final String SERVICE_FINISHED_AFTER_MAX_END_TIME = "serviceFinishedAfterMaxEndTime";
     public static final String MINIMIZE_TRAVEL_TIME = "minimizeTravelTime";
+    public static final String MAX_LAST_VISIT_DEPARTURE_TIME = "maxLastVisitDepartureTime";
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
         return new Constraint[] {
                 vehicleCapacity(factory),
                 serviceFinishedAfterMaxEndTime(factory),
-                minimizeTravelTime(factory)
+                minimizeTravelTime(factory),
+                maxLastVisitDepartureTime(factory)
         };
     }
 
@@ -48,6 +51,16 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                 .justifyWith((visit, score) -> new ServiceFinishedAfterMaxEndTimeJustification(visit.getId(),
                         visit.getServiceFinishedDelayInMinutes()))
                 .asConstraint(SERVICE_FINISHED_AFTER_MAX_END_TIME);
+    }
+
+    protected Constraint maxLastVisitDepartureTime(ConstraintFactory factory) {
+        return factory.forEach(Vehicle.class)
+                .filter(Vehicle::isLastVisitDepartureTimeOverMax)
+                .penalizeLong(HardSoftLongScore.ONE_HARD,
+                        Vehicle::getLastVisitDepartureOverageInMinutes)
+                .justifyWith((vehicle, score) -> new MaxLastVisitDepartureJustification(vehicle.getId(),
+                        vehicle.getLastVisitDepartureOverageInMinutes()))
+                .asConstraint(MAX_LAST_VISIT_DEPARTURE_TIME);
     }
 
     // ************************************************************************
