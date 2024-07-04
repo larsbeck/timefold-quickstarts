@@ -19,14 +19,20 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
 
     }
 
-    private boolean considerFloatingBreak(Vehicle vehicle, Visit visit) {
+    private boolean considerFloatingBreak(Vehicle vehicle, Visit visit, LocalDateTime arrivalTime) {
         if (vehicle.getFloatingBreak() == null) {
             return false;
         }
-        if (visit.getArrivalTime().isBefore(vehicle.getFloatingBreak().getTriggerTime())) {
+        if (visit.getArrivalTime() == null) {
             return false;
         }
-        if (visit.getArrivalTime().isAfter(vehicle.getFloatingBreakActiveAt())) {
+        if (arrivalTime.isBefore(vehicle.getFloatingBreak().getTriggerTime())) {
+            return false;
+        }
+        if (vehicle.getFloatingBreakActiveAt() == null) {
+            return true;
+        }
+        if (arrivalTime.isAfter(vehicle.getFloatingBreakActiveAt())) {
             return false;
         }
         return true;
@@ -49,14 +55,14 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
                 previousVisit == null ? visit.getVehicle().getDepartureTime() : previousVisit.getDepartureTime();
 
         Visit nextVisit = visit;
-        LocalDateTime arrivalTime = calculateArrivalTime(nextVisit, departureTime, considerFloatingBreak(vehicle, visit));
+        LocalDateTime arrivalTime = calculateArrivalTime(nextVisit, departureTime);
         while (nextVisit != null && !Objects.equals(nextVisit.getArrivalTime(), arrivalTime)) {
             scoreDirector.beforeVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
             nextVisit.setArrivalTime(arrivalTime);
             scoreDirector.afterVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
             departureTime = nextVisit.getDepartureTime();
             nextVisit = nextVisit.getNextVisit();
-            arrivalTime = calculateArrivalTime(nextVisit, departureTime, considerFloatingBreak(vehicle, visit));
+            arrivalTime = calculateArrivalTime(nextVisit, departureTime);
         }
     }
 
@@ -80,14 +86,14 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
 
     }
 
-    private LocalDateTime calculateArrivalTime(Visit visit, LocalDateTime previousDepartureTime, boolean considerFloatingBreak) {
+    private LocalDateTime calculateArrivalTime(Visit visit, LocalDateTime previousDepartureTime) {
         if (visit == null || previousDepartureTime == null) {
             return null;
         }
 
         var arrivalTime = previousDepartureTime.plusSeconds(visit.getDrivingTimeSecondsFromPreviousStandstill());
 
-        if (!considerFloatingBreak) {
+        if (!considerFloatingBreak(visit.getVehicle(), visit, arrivalTime)) {
             return arrivalTime;
         }
 
