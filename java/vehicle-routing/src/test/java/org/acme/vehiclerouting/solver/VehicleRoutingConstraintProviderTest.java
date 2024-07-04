@@ -10,10 +10,7 @@ import jakarta.inject.Inject;
 
 import ai.timefold.solver.test.api.score.stream.ConstraintVerifier;
 
-import org.acme.vehiclerouting.domain.Location;
-import org.acme.vehiclerouting.domain.Vehicle;
-import org.acme.vehiclerouting.domain.VehicleRoutePlan;
-import org.acme.vehiclerouting.domain.Visit;
+import org.acme.vehiclerouting.domain.*;
 import org.acme.vehiclerouting.domain.geo.HaversineDrivingTimeCalculator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -142,6 +139,29 @@ class VehicleRoutingConstraintProviderTest {
         constraintVerifier.verifyThat(VehicleRoutingConstraintProvider::maxLastVisitDepartureTime)
                 .given(vehicleA, visit1, visit2)
                 .penalizesBy(Duration.between(tomorrow_08_00, visit2.getArrivalTime().plusMinutes(visit2.getServiceDuration().toMinutes())).toMinutes());
+    }
+
+    @Test
+    void arrivalTimeUpdatingVariableListener() {
+        LocalDateTime tomorrow_07_00 = LocalDateTime.of(TOMORROW, LocalTime.of(7, 0));
+        LocalDateTime tomorrow_08_00 = LocalDateTime.of(TOMORROW, LocalTime.of(8, 0));
+        LocalDateTime tomorrow_08_40 = LocalDateTime.of(TOMORROW, LocalTime.of(8, 40));
+        LocalDateTime tomorrow_09_00 = LocalDateTime.of(TOMORROW, LocalTime.of(9, 0));
+        LocalDateTime tomorrow_10_30 = LocalDateTime.of(TOMORROW, LocalTime.of(10, 30));
+        LocalDateTime tomorrow_18_00 = LocalDateTime.of(TOMORROW, LocalTime.of(18, 0));
+
+        Visit visit1 = new Visit("2", "John", LOCATION_2, 80, tomorrow_08_00, tomorrow_18_00, Duration.ofHours(1L));
+        visit1.setArrivalTime(tomorrow_08_40);
+        Visit visit2 = new Visit("3", "Paul", LOCATION_3, 40, tomorrow_08_00, tomorrow_09_00, Duration.ofHours(1L));
+        visit2.setArrivalTime(tomorrow_10_30);
+        Vehicle vehicleA = new Vehicle("1", 100, LOCATION_1, tomorrow_07_00, tomorrow_08_00);
+        vehicleA.setFloatingBreak(new FloatingBreak(tomorrow_08_00, Duration.ofMinutes(30L)));
+
+        connect(vehicleA, visit1, visit2);
+
+        constraintVerifier.verifyThat(VehicleRoutingConstraintProvider::maxLastVisitDepartureTime)
+                .given(vehicleA, visit1, visit2)
+                .penalizesBy(240);
     }
 
     static void connect(Vehicle vehicle, Visit... visits) {

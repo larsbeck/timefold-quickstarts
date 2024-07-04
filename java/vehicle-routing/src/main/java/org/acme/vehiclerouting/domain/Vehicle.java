@@ -25,6 +25,9 @@ public class Vehicle {
     private LocalDateTime departureTime;
     private LocalDateTime maxLastVisitDepartureTime;
 
+    private FloatingBreak floatingBreak;
+    private LocalDateTime floatingBreakActiveAt;
+
     @JsonIdentityReference(alwaysAsId = true)
     @PlanningListVariable
     private List<Visit> visits;
@@ -83,6 +86,22 @@ public class Vehicle {
 
     public void setMaxLastVisitDepartureTime(LocalDateTime maxLastVisitDepartureTime) {
         this.maxLastVisitDepartureTime = maxLastVisitDepartureTime;
+    }
+
+    public FloatingBreak getFloatingBreak() {
+        return floatingBreak;
+    }
+
+    public void setFloatingBreak(FloatingBreak floatingBreak) {
+        this.floatingBreak = floatingBreak;
+    }
+
+    public LocalDateTime getFloatingBreakActiveAt() {
+        return floatingBreakActiveAt;
+    }
+
+    public void setFloatingBreakActiveAt(LocalDateTime floatingBreakActiveAt) {
+        this.floatingBreakActiveAt = floatingBreakActiveAt;
     }
 
     // ************************************************************************
@@ -149,4 +168,5 @@ public class Vehicle {
     public String toString() {
         return id;
     }
+
 }

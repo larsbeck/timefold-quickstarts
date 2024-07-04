@@ -6,6 +6,7 @@ import java.util.Objects;
 import ai.timefold.solver.core.api.domain.variable.VariableListener;
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
 
+import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.domain.Visit;
 import org.acme.vehiclerouting.domain.VehicleRoutePlan;
 
@@ -18,9 +19,23 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
 
     }
 
+    private boolean considerFloatingBreak(Vehicle vehicle, Visit visit) {
+        if (vehicle.getFloatingBreak() == null) {
+            return false;
+        }
+        if (visit.getArrivalTime().isBefore(vehicle.getFloatingBreak().getTriggerTime())) {
+            return false;
+        }
+        if (visit.getArrivalTime().isAfter(vehicle.getFloatingBreakActiveAt())) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void afterVariableChanged(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit) {
-        if (visit.getVehicle() == null) {
+        var vehicle = visit.getVehicle();
+        if (vehicle == null) {
             if (visit.getArrivalTime() != null) {
                 scoreDirector.beforeVariableChanged(visit, ARRIVAL_TIME_FIELD);
                 visit.setArrivalTime(null);
@@ -34,14 +49,14 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
                 previousVisit == null ? visit.getVehicle().getDepartureTime() : previousVisit.getDepartureTime();
 
         Visit nextVisit = visit;
-        LocalDateTime arrivalTime = calculateArrivalTime(nextVisit, departureTime);
+        LocalDateTime arrivalTime = calculateArrivalTime(nextVisit, departureTime, considerFloatingBreak(vehicle, visit));
         while (nextVisit != null && !Objects.equals(nextVisit.getArrivalTime(), arrivalTime)) {
             scoreDirector.beforeVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
             nextVisit.setArrivalTime(arrivalTime);
             scoreDirector.afterVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
             departureTime = nextVisit.getDepartureTime();
             nextVisit = nextVisit.getNextVisit();
-            arrivalTime = calculateArrivalTime(nextVisit, departureTime);
+            arrivalTime = calculateArrivalTime(nextVisit, departureTime, considerFloatingBreak(vehicle, visit));
         }
     }
 
@@ -65,10 +80,21 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
 
     }
 
-    private LocalDateTime calculateArrivalTime(Visit visit, LocalDateTime previousDepartureTime) {
+    private LocalDateTime calculateArrivalTime(Visit visit, LocalDateTime previousDepartureTime, boolean considerFloatingBreak) {
         if (visit == null || previousDepartureTime == null) {
             return null;
         }
-        return previousDepartureTime.plusSeconds(visit.getDrivingTimeSecondsFromPreviousStandstill());
+
+        var arrivalTime = previousDepartureTime.plusSeconds(visit.getDrivingTimeSecondsFromPreviousStandstill());
+
+        if (!considerFloatingBreak) {
+            return arrivalTime;
+        }
+
+        var floatingBreak = visit.getVehicle().getFloatingBreak();
+        arrivalTime = arrivalTime.plus(floatingBreak.getDuration());
+        visit.getVehicle().setFloatingBreakActiveAt(arrivalTime);
+
+        return arrivalTime;
     }
 }
