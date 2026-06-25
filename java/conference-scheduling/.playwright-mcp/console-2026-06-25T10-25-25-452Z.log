@@ -1,0 +1,3 @@
+[      36ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8080/demo-data/BASIC:0
+[      36ms] [ERROR] Getting the demo data has failed.
+404: Not Found : no details provided @ http://localhost:8080/app.js:628

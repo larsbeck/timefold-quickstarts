@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e4]:
+      - img "Timefold Solver logo" [ref=e6]
+      - generic [ref=e7]: Conference Scheduling Solver Quickstart
+      - tablist [ref=e10]:
+        - tab "Demo UI" [selected] [ref=e11] [cursor=pointer]
+        - tab "Guide" [ref=e12] [cursor=pointer]
+        - tab "REST API" [ref=e13] [cursor=pointer]
+        - link "Next Steps" [ref=e14] [cursor=pointer]:
+          - /url: https://solver.timefold.ai/quickstart-next-steps?utm_source=github&utm_medium=quickstart&utm_campaign=timefold-quickstarts&utm_content=conference-scheduling-java
+          - tab "Next Steps" [ref=e15]
+  - tabpanel "Demo UI" [ref=e17]:
+    - alert [ref=e19]:
+      - generic [ref=e20]:
+        - strong [ref=e21]: Error
+        - button "Close" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - paragraph [ref=e24]: Getting the demo data has failed.
+        - code [ref=e26]: "404: Not Found Code: unknown Error id: ----"
+    - blockquote [ref=e27]: Generate the optimal schedule for your conference talks.
+    - generic [ref=e28]:
+      - button "Solve" [ref=e29] [cursor=pointer]: Solve
+      - text: "Score: ?"
+      - button [ref=e31] [cursor=pointer]
+      - tablist [ref=e34]:
+        - tab "By room" [selected] [ref=e35] [cursor=pointer]
+        - tab "By Speaker" [ref=e36] [cursor=pointer]
+        - tab "By Theme Tracks" [ref=e37] [cursor=pointer]
+        - tab "By Sectors" [ref=e38] [cursor=pointer]
+        - tab "By Audience Type" [ref=e39] [cursor=pointer]
+        - tab "By Audience Level" [ref=e40] [cursor=pointer]
+    - generic:
+      - tabpanel "By room":
+        - table
+    - heading "Unassigned talks" [level=2] [ref=e41]
+  - contentinfo [ref=e42]:
+    - generic [ref=e44]:
+      - link "Website" [ref=e46] [cursor=pointer]:
+        - /url: https://solver.timefold.ai?utm_source=github&utm_medium=quickstart&utm_campaign=timefold-quickstarts&utm_content=conference-scheduling-java
+      - link "Documentation" [ref=e49] [cursor=pointer]:
+        - /url: https://docs.timefold.ai/timefold-solver/latest?utm_source=github&utm_medium=quickstart&utm_campaign=timefold-quickstarts&utm_content=conference-scheduling-java
+      - link "Code" [ref=e52] [cursor=pointer]:
+        - /url: https://github.com/TimefoldAI/timefold-quickstarts
+      - link "GitHub Discussions" [ref=e55] [cursor=pointer]:
+        - /url: https://github.com/TimefoldAI/timefold-solver/discussions
