@@ -422,6 +422,8 @@
             <id>pmd-check</id>
             <phase>compile</phase>
             <goals>
+              <goal>pmd</goal>
+              <goal>cpd</goal>
               <goal>check</goal>
               <goal>cpd-check</goal>
             </goals>
