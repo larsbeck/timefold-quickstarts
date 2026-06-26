@@ -14,6 +14,7 @@ bin
 *.iws
 *.iml
 *.jar
+.playwright-mcp
 
 # Repository wide ignore mac DS_Store files
 .DS_Store
