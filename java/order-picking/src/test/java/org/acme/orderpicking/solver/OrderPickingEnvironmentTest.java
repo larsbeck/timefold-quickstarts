@@ -1,8 +1,9 @@
-package org.acme.orderpicking.rest;
+package org.acme.orderpicking.solver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import jakarta.inject.Inject;
 
@@ -10,9 +11,10 @@ import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.solver.EnvironmentMode;
 import ai.timefold.solver.core.config.solver.SolverConfig;
+import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
 import org.acme.orderpicking.domain.OrderPickingSolution;
-import org.acme.orderpicking.persistence.OrderPickingRepository;
+import org.acme.orderpicking.service.OrderPickingModelConvertor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -23,10 +25,10 @@ import io.quarkus.test.junit.QuarkusTest;
 class OrderPickingEnvironmentTest {
 
     @Inject
-    OrderPickingRepository orderPickingRepository;
+    SolverConfig solverConfig;
 
     @Inject
-    SolverConfig solverConfig;
+    OrderPickingModelConvertor modelConvertor;
 
     @Test
     void solveFullAssert() {
@@ -39,19 +41,16 @@ class OrderPickingEnvironmentTest {
     }
 
     void solve(EnvironmentMode environmentMode) {
-        // Load the problem
-        var problem = orderPickingRepository.find();
+        var input = SolverTestDataFactory.createProblem();
+        OrderPickingSolution problem = modelConvertor.toSolverModel(input, ModelConfig.empty(), Optional.empty());
 
-        // Update the environment
-        var updatedConfig = solverConfig.copyConfig();
-        updatedConfig.withEnvironmentMode(environmentMode)
-                .withTerminationSpentLimit(Duration.ofSeconds(30))
+        SolverConfig updatedConfig = solverConfig.copyConfig();
+        updatedConfig.withEnvironmentMode(environmentMode).withTerminationSpentLimit(Duration.ofSeconds(30))
                 .getTerminationConfig().withBestScoreLimit(null);
-        var solverFactory = SolverFactory.<OrderPickingSolution>create(updatedConfig);
+        SolverFactory<OrderPickingSolution> solverFactory = SolverFactory.create(updatedConfig);
 
-        // Solve the problem
-        var solver = solverFactory.buildSolver();
-        var solution = solver.solve(problem);
+        Solver<OrderPickingSolution> solver = solverFactory.buildSolver();
+        OrderPickingSolution solution = solver.solve(problem);
         assertThat(solution.getScore()).isNotNull();
     }
 }
