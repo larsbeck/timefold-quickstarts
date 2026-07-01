@@ -20,44 +20,9 @@
     <frontend-maven-plugin.version>2.0.1</frontend-maven-plugin.version>
     <node.version>v24.14.0</node.version>
     <maven.compiler.release>25</maven.compiler.release>
-    <!-- Quarkus build runs with the enterprise edition active. -->
-    <quarkus.profile>enterprise</quarkus.profile>
   </properties>
 
-  <dependencyManagement>
-    <dependencies>
-      <!-- Timefold Solver Enterprise edition. Required for the platform `calculateScoreAnalysis`
-           endpoint; without it `timefold:deploy` fails with a missing-descriptor-entry error. -->
-      <dependency>
-        <groupId>ai.timefold.solver.enterprise</groupId>
-        <artifactId>timefold-solver-enterprise-bom</artifactId>
-        <version>${version.ai.timefold.solver}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <dependencies>
-
-    <!-- Timefold Solver Enterprise edition -->
-    <dependency>
-      <groupId>ai.timefold.solver.enterprise</groupId>
-      <artifactId>timefold-solver-enterprise-service</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>ai.timefold.solver.enterprise</groupId>
-      <artifactId>timefold-solver-enterprise-service-storage-fs</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>ai.timefold.solver.enterprise</groupId>
-      <artifactId>timefold-solver-enterprise-service-defaults</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>ai.timefold.solver.enterprise</groupId>
-      <artifactId>timefold-solver-enterprise-service-test</artifactId>
-      <scope>test</scope>
-    </dependency>
 
     <!-- Testing -->
     <dependency>
@@ -138,11 +103,11 @@
         <version>${project.parent.version}</version>
         <configuration>
           <platformUrl>https://sandbox.timefold.dev</platformUrl>
-          <key>sports-demo-v7</key>
+          <key>sports-league-scheduling</key>
           <tenants>
             <tenant>dc6f4fa5-5f53-4f00-abac-464a6fca24d7</tenant>
           </tenants>
-          <overwrite>true</overwrite>
+          <!-- <overwrite>true</overwrite> -->
           <handleSubscription>true</handleSubscription>
         </configuration>
         <executions>
