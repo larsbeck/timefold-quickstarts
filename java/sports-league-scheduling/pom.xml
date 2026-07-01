@@ -103,7 +103,7 @@
         <version>${project.parent.version}</version>
         <configuration>
           <platformUrl>https://sandbox.timefold.dev</platformUrl>
-          <key>sports-demo-v7</key>
+          <key>sports-league-scheduling</key>
           <tenants>
             <tenant>dc6f4fa5-5f53-4f00-abac-464a6fca24d7</tenant>
           </tenants>
