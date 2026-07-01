@@ -1,3 +1,22 @@
+// ── Platform context ──
+// When embedded in the Timefold Platform, the iframe URL carries these query params.
+// Standalone (local dev), none are present and the app behaves as before.
+const PLATFORM = (function () {
+    const q = new URL(window.location.href).searchParams;
+    return {
+        onPlatform: q.has('onPlatform'),
+        runId: q.get('runId'),
+        // apiUrl: base URL of the model API on the platform (URL-encoded). Trailing slash stripped.
+        apiUrl: q.has('apiUrl') ? decodeURIComponent(q.get('apiUrl')).replace(/\/+$/, '') : null,
+        apiKey: q.has('apiKey') ? q.get('apiKey') : null,
+    };
+})();
+
+// Build an API URL: prefix the platform base when embedded, else root-relative (local dev).
+function api(path) {
+    return PLATFORM.apiUrl ? PLATFORM.apiUrl + path : path;
+}
+
 let autoRefreshIntervalId = null;
 let initialized = false;
 let planId = null;
@@ -94,8 +113,41 @@ $(document).ready(function () {
         byVisitTimeline.redraw();
     })
     setupAjax();
-    loadDemoData();
+    // Embedded on the platform: hide the demo chrome and load the run read-only.
+    if (PLATFORM.onPlatform) {
+        document.body.classList.add('on-platform');
+        loadPlatformRun();
+    } else {
+        loadDemoData();
+    }
 });
+
+// ── Platform: load an existing run (read-only) ──
+// ModelRest exposes the run's input at /{id}/model-request (ModelRequest -> {config, modelInput})
+// and its output+status at /{id} (ModelResponse -> {metadata:{solverStatus,score}, modelOutput}).
+function loadPlatformRun() {
+    if (!PLATFORM.runId) {
+        showError("No runId provided by platform.", {status: 0, statusText: "missing runId"});
+        return;
+    }
+    planId = PLATFORM.runId;
+    $.getJSON(api("/v1/route-plans/" + planId + "/model-request"), function (req) {
+        const input = req.modelInput || req;
+        cacheBounds(input);
+        homeLocationGroup.clearLayers();
+        homeLocationMarkerByIdMap.clear();
+        visitGroup.clearLayers();
+        visitMarkerByIdMap.clear();
+        initialized = false;
+        render(input.vehicles, input.visits, null);
+        refreshRoutePlan();
+        if (autoRefreshIntervalId == null) {
+            autoRefreshIntervalId = setInterval(refreshRoutePlan, 2000);
+        }
+    }).fail(function (xhr) {
+        showError("Failed to load run input from platform.", xhr);
+    });
+}
 
 function colorByVehicleId(vehicleId) {
     return vehicleId == null ? null : pickColor('vehicle' + vehicleId);
@@ -371,6 +423,8 @@ function setupAjax() {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json,text/plain',
+            // On the platform, authenticate every request with the supplied API key.
+            ...(PLATFORM.apiKey ? {'X-API-KEY': PLATFORM.apiKey} : {})
         }
     });
     jQuery.each(["put", "delete"], function (i, method) {
@@ -393,7 +447,7 @@ function cacheBounds(modelInput) {
 }
 
 function loadDemoData() {
-    $.getJSON("/v1/demo-data/BASIC", function (dataset) {
+    $.getJSON(api("/v1/demo-data/BASIC"), function (dataset) {
         demoDataset = dataset;
         cacheBounds(dataset.modelInput);
         homeLocationGroup.clearLayers();
@@ -413,7 +467,7 @@ function solve() {
         showError("No demo data loaded yet.", {status: 0, statusText: "no data"});
         return;
     }
-    $.post("/v1/route-plans", JSON.stringify(demoDataset), function (data) {
+    $.post(api("/v1/route-plans"), JSON.stringify(demoDataset), function (data) {
         planId = data.id;
         refreshSolvingButtons(true);
     }).fail(function (xhr) {
@@ -427,7 +481,7 @@ function refreshRoutePlan() {
         loadDemoData();
         return;
     }
-    $.getJSON("/v1/route-plans/" + planId, function (plan) {
+    $.getJSON(api("/v1/route-plans/" + planId), function (plan) {
         const metadata = plan.metadata || {};
         const output = plan.modelOutput || {};
         render(output.vehicles || [], output.visits || [], metadata.score);
@@ -459,7 +513,7 @@ function stopSolving() {
     if (planId === null) {
         return;
     }
-    $.delete("/v1/route-plans/" + planId, function () {
+    $.delete(api("/v1/route-plans/" + planId), function () {
         refreshSolvingButtons(false);
         refreshRoutePlan();
     }).fail(function (xhr) {
