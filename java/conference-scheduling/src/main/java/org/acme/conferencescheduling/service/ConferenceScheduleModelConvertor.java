@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -38,7 +38,7 @@ import org.acme.conferencescheduling.dto.TimeslotDTO;
 @ApplicationScoped
 public class ConferenceScheduleModelConvertor
         implements
-        ModelConvertor<HardSoftScore, ConferenceScheduleInput, ConferenceScheduleConfigOverrides, ConferenceSchedule, ConferenceScheduleOutput> {
+        ModelConvertor<HardMediumSoftScore, ConferenceScheduleInput, ConferenceScheduleConfigOverrides, ConferenceSchedule, ConferenceScheduleOutput> {
 
     @Override
     public ConferenceScheduleInput applyOutputToInput(ConferenceScheduleInput modelInput,
@@ -171,47 +171,47 @@ public class ConferenceScheduleModelConvertor
             return;
         }
         ConferenceScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weights = new HashMap<>();
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
         weights.put(ConferenceConstraintProperties.THEME_TRACK_CONFLICT,
-                HardSoftScore.ofSoft(overrides.themeTrackConflictWeight()));
+                HardMediumSoftScore.ofSoft(overrides.themeTrackConflictWeight()));
         weights.put(ConferenceConstraintProperties.THEME_TRACK_ROOM_STABILITY,
-                HardSoftScore.ofSoft(overrides.themeTrackRoomStabilityWeight()));
+                HardMediumSoftScore.ofSoft(overrides.themeTrackRoomStabilityWeight()));
         weights.put(ConferenceConstraintProperties.SECTOR_CONFLICT,
-                HardSoftScore.ofSoft(overrides.sectorConflictWeight()));
+                HardMediumSoftScore.ofSoft(overrides.sectorConflictWeight()));
         weights.put(ConferenceConstraintProperties.AUDIENCE_TYPE_DIVERSITY,
-                HardSoftScore.ofSoft(overrides.audienceTypeDiversityWeight()));
+                HardMediumSoftScore.ofSoft(overrides.audienceTypeDiversityWeight()));
         weights.put(ConferenceConstraintProperties.AUDIENCE_TYPE_THEME_TRACK_CONFLICT,
-                HardSoftScore.ofSoft(overrides.audienceTypeThemeTrackConflictWeight()));
+                HardMediumSoftScore.ofSoft(overrides.audienceTypeThemeTrackConflictWeight()));
         weights.put(ConferenceConstraintProperties.AUDIENCE_LEVEL_DIVERSITY,
-                HardSoftScore.ofSoft(overrides.audienceLevelDiversityWeight()));
+                HardMediumSoftScore.ofSoft(overrides.audienceLevelDiversityWeight()));
         weights.put(ConferenceConstraintProperties.CONTENT_AUDIENCE_LEVEL_FLOW_VIOLATION,
-                HardSoftScore.ofSoft(overrides.contentAudienceLevelFlowViolationWeight()));
+                HardMediumSoftScore.ofSoft(overrides.contentAudienceLevelFlowViolationWeight()));
         weights.put(ConferenceConstraintProperties.CONTENT_CONFLICT,
-                HardSoftScore.ofSoft(overrides.contentConflictWeight()));
+                HardMediumSoftScore.ofSoft(overrides.contentConflictWeight()));
         weights.put(ConferenceConstraintProperties.LANGUAGE_DIVERSITY,
-                HardSoftScore.ofSoft(overrides.languageDiversityWeight()));
+                HardMediumSoftScore.ofSoft(overrides.languageDiversityWeight()));
         weights.put(ConferenceConstraintProperties.SAME_DAY_TALKS,
-                HardSoftScore.ofSoft(overrides.sameDayTalksWeight()));
+                HardMediumSoftScore.ofSoft(overrides.sameDayTalksWeight()));
         weights.put(ConferenceConstraintProperties.POPULAR_TALKS,
-                HardSoftScore.ofSoft(overrides.popularTalksWeight()));
+                HardMediumSoftScore.ofSoft(overrides.popularTalksWeight()));
         weights.put(ConferenceConstraintProperties.SPEAKER_PREFERRED_TIMESLOT_TAGS,
-                HardSoftScore.ofSoft(overrides.speakerPreferredTimeslotTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.speakerPreferredTimeslotTagsWeight()));
         weights.put(ConferenceConstraintProperties.SPEAKER_UNDESIRED_TIMESLOT_TAGS,
-                HardSoftScore.ofSoft(overrides.speakerUndesiredTimeslotTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.speakerUndesiredTimeslotTagsWeight()));
         weights.put(ConferenceConstraintProperties.TALK_PREFERRED_TIMESLOT_TAGS,
-                HardSoftScore.ofSoft(overrides.talkPreferredTimeslotTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.talkPreferredTimeslotTagsWeight()));
         weights.put(ConferenceConstraintProperties.TALK_UNDESIRED_TIMESLOT_TAGS,
-                HardSoftScore.ofSoft(overrides.talkUndesiredTimeslotTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.talkUndesiredTimeslotTagsWeight()));
         weights.put(ConferenceConstraintProperties.SPEAKER_PREFERRED_ROOM_TAGS,
-                HardSoftScore.ofSoft(overrides.speakerPreferredRoomTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.speakerPreferredRoomTagsWeight()));
         weights.put(ConferenceConstraintProperties.SPEAKER_UNDESIRED_ROOM_TAGS,
-                HardSoftScore.ofSoft(overrides.speakerUndesiredRoomTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.speakerUndesiredRoomTagsWeight()));
         weights.put(ConferenceConstraintProperties.TALK_PREFERRED_ROOM_TAGS,
-                HardSoftScore.ofSoft(overrides.talkPreferredRoomTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.talkPreferredRoomTagsWeight()));
         weights.put(ConferenceConstraintProperties.TALK_UNDESIRED_ROOM_TAGS,
-                HardSoftScore.ofSoft(overrides.talkUndesiredRoomTagsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.talkUndesiredRoomTagsWeight()));
         weights.put(ConferenceConstraintProperties.SPEAKER_MAKESPAN,
-                HardSoftScore.ofSoft(overrides.speakerMakespanWeight()));
+                HardMediumSoftScore.ofSoft(overrides.speakerMakespanWeight()));
         schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
     }
 

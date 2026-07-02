@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -33,7 +33,7 @@ import org.acme.orderpicking.solver.OrderPickingConstraintProvider;
 @ApplicationScoped
 public class OrderPickingModelConvertor
         implements
-        ModelConvertor<HardSoftScore, OrderPickingInput, OrderPickingConfigOverrides, OrderPickingSolution, OrderPickingOutput> {
+        ModelConvertor<HardMediumSoftScore, OrderPickingInput, OrderPickingConfigOverrides, OrderPickingSolution, OrderPickingOutput> {
 
     @Override
     public OrderPickingInput applyOutputToInput(OrderPickingInput modelInput, OrderPickingOutput modelOutput) {
@@ -110,13 +110,13 @@ public class OrderPickingModelConvertor
             return;
         }
         OrderPickingConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weightOverrides = new HashMap<>();
+        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
         weightOverrides.put(OrderPickingConstraintProvider.MINIMIZE_DISTANCE_FROM_PREVIOUS_PICK,
-                HardSoftScore.ofSoft(overrides.minimizeDistanceFromPreviousPickWeight()));
+                HardMediumSoftScore.ofSoft(overrides.minimizeDistanceFromPreviousPickWeight()));
         weightOverrides.put(OrderPickingConstraintProvider.MINIMIZE_DISTANCE_TO_PATH_ORIGIN,
-                HardSoftScore.ofSoft(overrides.minimizeDistanceToPathOriginWeight()));
+                HardMediumSoftScore.ofSoft(overrides.minimizeDistanceToPathOriginWeight()));
         weightOverrides.put(OrderPickingConstraintProvider.MINIMIZE_ORDER_SPLIT_BY_TROLLEY,
-                HardSoftScore.ofSoft(overrides.minimizeOrderSplitByTrolleyWeight()));
+                HardMediumSoftScore.ofSoft(overrides.minimizeOrderSplitByTrolleyWeight()));
         solution.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
     }
 

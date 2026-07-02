@@ -7,7 +7,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import java.util.HashSet;
 import java.util.Set;
 
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
@@ -50,7 +50,7 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                 .forEachUniquePair(Job.class,
                         equal(Job::getCrew),
                         overlapping(Job::getStartDate, Job::getEndDate))
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardMediumSoftScore.ONE_HARD,
                         (job1, job2) -> (int) DAYS.between(
                                 job1.getStartDate().isAfter(job2.getStartDate())
                                         ? job1.getStartDate()
@@ -68,7 +68,7 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
         return constraintFactory.forEach(Job.class)
                 .filter(job -> job.getMinStartDate() != null
                         && job.getStartDate().isBefore(job.getMinStartDate()))
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardMediumSoftScore.ONE_HARD,
                         job -> (int) DAYS.between(job.getStartDate(), job.getMinStartDate()))
                 .asConstraint(new ConstraintInfo(MIN_START_DATE, MIN_START_DATE,
                         "Don't start a maintenance job before it is ready to start.",
@@ -80,7 +80,7 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
         return constraintFactory.forEach(Job.class)
                 .filter(job -> job.getMaxEndDate() != null
                         && job.getEndDate().isAfter(job.getMaxEndDate()))
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardMediumSoftScore.ONE_HARD,
                         job -> (int) DAYS.between(job.getMaxEndDate(), job.getEndDate()))
                 .asConstraint(new ConstraintInfo(MAX_END_DATE, MAX_END_DATE,
                         "Don't end a maintenance job after it is due.",
@@ -96,7 +96,7 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
         return constraintFactory.forEach(Job.class)
                 .filter(job -> job.getIdealEndDate() != null
                         && job.getEndDate().isBefore(job.getIdealEndDate()))
-                .penalize(HardSoftScore.ofSoft(1),
+                .penalize(HardMediumSoftScore.ofSoft(1),
                         job -> (int) DAYS.between(job.getEndDate(), job.getIdealEndDate()))
                 .asConstraint(new ConstraintInfo(BEFORE_IDEAL_END_DATE, BEFORE_IDEAL_END_DATE,
                         "Early maintenance is expensive because it needs to happen again sooner.",
@@ -108,7 +108,7 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
         return constraintFactory.forEach(Job.class)
                 .filter(job -> job.getIdealEndDate() != null
                         && job.getEndDate().isAfter(job.getIdealEndDate()))
-                .penalize(HardSoftScore.ofSoft(1_000_000),
+                .penalize(HardMediumSoftScore.ofSoft(1_000_000),
                         job -> (int) DAYS.between(job.getIdealEndDate(), job.getEndDate()))
                 .asConstraint(new ConstraintInfo(AFTER_IDEAL_END_DATE, AFTER_IDEAL_END_DATE,
                         "Late maintenance is risky because delays can push it over the due date.",
@@ -121,7 +121,7 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                 .forEachUniquePair(Job.class,
                         overlapping(Job::getStartDate, Job::getEndDate),
                         Joiners.containingAnyOf(Job::getTags))
-                .penalize(HardSoftScore.ofSoft(1_000),
+                .penalize(HardMediumSoftScore.ofSoft(1_000),
                         (job1, job2) -> {
                             Set<String> intersection = new HashSet<>(job1.getTags());
                             intersection.retainAll(job2.getTags());

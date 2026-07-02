@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -29,7 +29,7 @@ import org.acme.employeescheduling.solver.EmployeeSchedulingConstraintProvider;
 @ApplicationScoped
 public class EmployeeScheduleModelConvertor
         implements
-        ModelConvertor<HardSoftScore, EmployeeScheduleInput, EmployeeScheduleConfigOverrides, EmployeeSchedule, EmployeeScheduleOutput> {
+        ModelConvertor<HardMediumSoftScore, EmployeeScheduleInput, EmployeeScheduleConfigOverrides, EmployeeSchedule, EmployeeScheduleOutput> {
 
     @Override
     public EmployeeScheduleInput applyOutputToInput(EmployeeScheduleInput modelInput,
@@ -84,13 +84,13 @@ public class EmployeeScheduleModelConvertor
             return;
         }
         EmployeeScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weightOverrides = new HashMap<>();
+        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
         weightOverrides.put(EmployeeSchedulingConstraintProvider.UNDESIRED_DAY_FOR_EMPLOYEE,
-                HardSoftScore.ofSoft(overrides.undesiredDayForEmployeeWeight()));
+                HardMediumSoftScore.ofSoft(overrides.undesiredDayForEmployeeWeight()));
         weightOverrides.put(EmployeeSchedulingConstraintProvider.DESIRED_DAY_FOR_EMPLOYEE,
-                HardSoftScore.ofSoft(overrides.desiredDayForEmployeeWeight()));
+                HardMediumSoftScore.ofSoft(overrides.desiredDayForEmployeeWeight()));
         weightOverrides.put(EmployeeSchedulingConstraintProvider.BALANCE_EMPLOYEE_SHIFT_ASSIGNMENTS,
-                HardSoftScore.ofSoft(overrides.balanceEmployeeShiftAssignmentsWeight()));
+                HardMediumSoftScore.ofSoft(overrides.balanceEmployeeShiftAssignmentsWeight()));
         schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
     }
 

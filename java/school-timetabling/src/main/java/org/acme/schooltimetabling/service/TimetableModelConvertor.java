@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -30,7 +30,7 @@ import org.acme.schooltimetabling.solver.TimetableConstraintProvider;
 @ApplicationScoped
 public class TimetableModelConvertor
         implements
-        ModelConvertor<HardSoftScore, TimetableInput, TimetableConfigOverrides, Timetable, TimetableOutput> {
+        ModelConvertor<HardMediumSoftScore, TimetableInput, TimetableConfigOverrides, Timetable, TimetableOutput> {
 
     @Override
     public TimetableInput applyOutputToInput(TimetableInput modelInput, TimetableOutput modelOutput) {
@@ -89,13 +89,13 @@ public class TimetableModelConvertor
             return;
         }
         TimetableConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weightOverrides = new HashMap<>();
+        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
         weightOverrides.put(TimetableConstraintProvider.TEACHER_ROOM_STABILITY,
-                HardSoftScore.ofSoft(overrides.teacherRoomStabilityWeight()));
+                HardMediumSoftScore.ofSoft(overrides.teacherRoomStabilityWeight()));
         weightOverrides.put(TimetableConstraintProvider.TEACHER_TIME_EFFICIENCY,
-                HardSoftScore.ofSoft(overrides.teacherTimeEfficiencyWeight()));
+                HardMediumSoftScore.ofSoft(overrides.teacherTimeEfficiencyWeight()));
         weightOverrides.put(TimetableConstraintProvider.STUDENT_GROUP_SUBJECT_VARIETY,
-                HardSoftScore.ofSoft(overrides.studentGroupSubjectVarietyWeight()));
+                HardMediumSoftScore.ofSoft(overrides.studentGroupSubjectVarietyWeight()));
         timetable.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
     }
 

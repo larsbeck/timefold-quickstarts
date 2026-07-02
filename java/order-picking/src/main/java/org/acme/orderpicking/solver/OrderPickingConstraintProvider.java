@@ -4,7 +4,7 @@ import static ai.timefold.solver.core.api.score.stream.ConstraintCollectors.coun
 import static ai.timefold.solver.core.api.score.stream.ConstraintCollectors.sum;
 import static org.acme.orderpicking.domain.Warehouse.calculateDistance;
 
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
@@ -61,7 +61,7 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
                         sum((trolley, order, orderTotalBuckets) -> orderTotalBuckets))
                 // penalization if the trolley don't have enough buckets to hold the orders
                 .filter((trolley, trolleyTotalBuckets) -> trolley.getBucketCount() < trolleyTotalBuckets)
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardMediumSoftScore.ONE_HARD,
                         (trolley, trolleyTotalBuckets) -> trolleyTotalBuckets - trolley.getBucketCount())
                 .asConstraint(new ConstraintInfo(REQUIRED_NUMBER_OF_BUCKETS, REQUIRED_NUMBER_OF_BUCKETS,
                         "A trolley must have enough buckets to hold all order items assigned to it.",
@@ -75,7 +75,7 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(PickTask.class)
                 .groupBy(pick -> pick.getOrderItem().getOrder(),
                         countDistinct(PickTask::getTrolley))
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         (order, trolleySpreadCount) -> trolleySpreadCount * ORDER_SPLIT_PENALTY)
                 .asConstraint(new ConstraintInfo(MINIMIZE_ORDER_SPLIT_BY_TROLLEY, MINIMIZE_ORDER_SPLIT_BY_TROLLEY,
                         "An order should ideally be picked by a single trolley.",
@@ -90,7 +90,7 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
      */
     Constraint minimizeDistanceFromPreviousPickTask(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(PickTask.class)
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         pick -> {
                             var previousLocation = pick.getPreviousPickTask() != null
                                     ? pick.getPreviousPickTask().getLocation()
@@ -111,7 +111,7 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
     Constraint minimizeDistanceFromLastPickTaskToPathOrigin(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(PickTask.class)
                 .filter(PickTask::isLast)
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         pick -> calculateDistance(pick.getLocation(), pick.getTrolley().getLocation()))
                 .asConstraint(new ConstraintInfo(MINIMIZE_DISTANCE_TO_PATH_ORIGIN, MINIMIZE_DISTANCE_TO_PATH_ORIGIN,
                         "Minimize the distance travelled by a trolley returning to its origin after the last pick.",

@@ -5,7 +5,7 @@ import static ai.timefold.solver.core.api.score.stream.Joiners.filtering;
 
 import java.util.function.Function;
 
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
@@ -59,7 +59,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
                                 || match1.getHomeTeam().equals(match2.getAwayTeam())
                                 || match1.getAwayTeam().equals(match2.getHomeTeam())
                                 || match1.getAwayTeam().equals(match2.getAwayTeam())))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint(new ConstraintInfo(MATCHES_ON_SAME_DAY, MATCHES_ON_SAME_DAY,
                         "A team must not play two matches on the same day.",
                         LeagueScheduleConstraintGroup.SCHEDULE_FEASIBILITY));
@@ -72,7 +72,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
                         ConstraintCollectors.toConsecutiveSequences((match, team) -> match.getRound(), Round::getIndex))
                 .flattenLast(SequenceChain::getConsecutiveSequences)
                 .filter((team, matches) -> matches.getCount() >= MAX_CONSECUTIVE_MATCHES)
-                .penalize(HardSoftScore.ONE_HARD, (team, matches) -> matches.getCount())
+                .penalize(HardMediumSoftScore.ONE_HARD, (team, matches) -> matches.getCount())
                 .asConstraint(new ConstraintInfo(CONSECUTIVE_HOME_MATCHES, CONSECUTIVE_HOME_MATCHES,
                         "A team must not play four or more consecutive home matches.",
                         LeagueScheduleConstraintGroup.SCHEDULE_FEASIBILITY));
@@ -85,7 +85,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
                         ConstraintCollectors.toConsecutiveSequences((match, team) -> match.getRound(), Round::getIndex))
                 .flattenLast(SequenceChain::getConsecutiveSequences)
                 .filter((team, matches) -> matches.getCount() >= MAX_CONSECUTIVE_MATCHES)
-                .penalize(HardSoftScore.ONE_HARD, (team, matches) -> matches.getCount())
+                .penalize(HardMediumSoftScore.ONE_HARD, (team, matches) -> matches.getCount())
                 .asConstraint(new ConstraintInfo(CONSECUTIVE_AWAY_MATCHES, CONSECUTIVE_AWAY_MATCHES,
                         "A team must not play four or more consecutive away matches.",
                         LeagueScheduleConstraintGroup.SCHEDULE_FEASIBILITY));
@@ -96,7 +96,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
                 .ifExists(Match.class, equal(Match::getHomeTeam, Match::getAwayTeam),
                         equal(Match::getAwayTeam, Match::getHomeTeam),
                         equal(match -> match.getRoundIndex() + 1, Match::getRoundIndex))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint(new ConstraintInfo(REPEAT_MATCH_ON_THE_NEXT_DAY, REPEAT_MATCH_ON_THE_NEXT_DAY,
                         "The reverse fixture must not be played on the day after a match.",
                         LeagueScheduleConstraintGroup.SCHEDULE_FEASIBILITY));
@@ -106,7 +106,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
         return constraintFactory.forEach(Match.class)
                 .ifNotExists(Round.class,
                         equal(match -> match.getRoundIndex() - 1, Round::getIndex))
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         match -> match.getAwayTeam().getDistance(match.getHomeTeam()))
                 .asConstraint(new ConstraintInfo(START_TO_AWAY_HOP, START_TO_AWAY_HOP,
                         "Minimize travel from a team's base to its first away match.",
@@ -117,7 +117,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
         return constraintFactory.forEach(Match.class)
                 .join(Match.class, equal(Match::getHomeTeam, Match::getAwayTeam),
                         equal(match -> match.getRoundIndex() + 1, Match::getRoundIndex))
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         (match, otherMatch) -> match.getHomeTeam().getDistance(otherMatch.getHomeTeam()))
                 .asConstraint(new ConstraintInfo(HOME_TO_AWAY_HOP, HOME_TO_AWAY_HOP,
                         "Minimize travel from a home match to the next away match.",
@@ -128,7 +128,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
         return constraintFactory.forEach(Match.class)
                 .join(Match.class, equal(Match::getAwayTeam, Match::getAwayTeam),
                         equal(match -> match.getRoundIndex() + 1, Match::getRoundIndex))
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         (match, otherMatch) -> match.getHomeTeam().getDistance(otherMatch.getHomeTeam()))
                 .asConstraint(new ConstraintInfo(AWAY_TO_AWAY_HOP, AWAY_TO_AWAY_HOP,
                         "Minimize travel between two consecutive away matches.",
@@ -139,7 +139,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
         return constraintFactory.forEach(Match.class)
                 .join(Match.class, equal(Match::getAwayTeam, Match::getHomeTeam),
                         equal(match -> match.getRoundIndex() + 1, Match::getRoundIndex))
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         (match, otherMatch) -> match.getHomeTeam().getDistance(match.getAwayTeam()))
                 .asConstraint(new ConstraintInfo(AWAY_TO_HOME_HOP, AWAY_TO_HOME_HOP,
                         "Minimize travel from an away match back to a home match.",
@@ -149,7 +149,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
     protected Constraint awayToEndHop(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Match.class)
                 .ifNotExists(Round.class, equal(match -> match.getRoundIndex() + 1, Round::getIndex))
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         match -> match.getHomeTeam().getDistance(match.getAwayTeam()))
                 .asConstraint(new ConstraintInfo(AWAY_TO_END_HOP, AWAY_TO_END_HOP,
                         "Minimize travel from a team's last away match back to its base.",
@@ -159,7 +159,7 @@ public class SportsLeagueSchedulingConstraintProvider implements ConstraintProvi
     protected Constraint classicMatches(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Match.class)
                 .filter(match -> match.isClassicMatch() && !match.getRound().isWeekendOrHoliday())
-                .penalize(HardSoftScore.ofSoft(1000))
+                .penalize(HardMediumSoftScore.ofSoft(1000))
                 .asConstraint(new ConstraintInfo(CLASSIC_MATCHES, CLASSIC_MATCHES,
                         "Classic matches should be played on a weekend or holiday.",
                         LeagueScheduleConstraintGroup.MATCH_IMPORTANCE));

@@ -7,7 +7,7 @@ import static ai.timefold.solver.core.api.score.stream.Joiners.lessThan;
 
 import java.util.function.Function;
 
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
@@ -62,7 +62,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEachUniquePair(Stay.class,
                 equal(Stay::getBed))
                 .filter((left, right) -> left.calculateSameNightCount(right) > 0)
-                .penalize(HardSoftScore.ofHard(1000),
+                .penalize(HardMediumSoftScore.ofHard(1000),
                         Stay::calculateSameNightCount)
                 .asConstraint(new ConstraintInfo(SAME_BED_IN_SAME_NIGHT, SAME_BED_IN_SAME_NIGHT,
                         "Two patients must not occupy the same bed on the same night.",
@@ -73,7 +73,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEachIncludingUnassigned(Stay.class)
                 .filter(st -> st.getPatientGender() == Gender.FEMALE
                         && st.getRoomGenderLimitation() == GenderLimitation.MALE_ONLY)
-                .penalize(HardSoftScore.ofHard(50), Stay::getNightCount)
+                .penalize(HardMediumSoftScore.ofHard(50), Stay::getNightCount)
                 .asConstraint(new ConstraintInfo(FEMALE_IN_MALE_ROOM, FEMALE_IN_MALE_ROOM,
                         "A female patient must not be placed in a male-only room.",
                         BedScheduleConstraintGroup.PATIENT_SAFETY));
@@ -83,7 +83,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEachIncludingUnassigned(Stay.class)
                 .filter(st -> st.getPatientGender() == Gender.MALE
                         && st.getRoomGenderLimitation() == GenderLimitation.FEMALE_ONLY)
-                .penalize(HardSoftScore.ofHard(50), Stay::getNightCount)
+                .penalize(HardMediumSoftScore.ofHard(50), Stay::getNightCount)
                 .asConstraint(new ConstraintInfo(MALE_IN_FEMALE_ROOM, MALE_IN_FEMALE_ROOM,
                         "A male patient must not be placed in a female-only room.",
                         BedScheduleConstraintGroup.PATIENT_SAFETY));
@@ -98,7 +98,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
                         lessThan(Stay::getId),
                         filtering((left, right) -> left.getPatientGender() != right.getPatientGender()
                                 && left.calculateSameNightCount(right) > 0))
-                .penalize(HardSoftScore.ofHard(1000),
+                .penalize(HardMediumSoftScore.ofHard(1000),
                         Stay::calculateSameNightCount)
                 .asConstraint(new ConstraintInfo(DIFFERENT_GENDER_IN_SAME_GENDER_ROOM, DIFFERENT_GENDER_IN_SAME_GENDER_ROOM,
                         "Patients of different genders must not share a same-gender room on the same night.",
@@ -111,7 +111,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
                 .join(constraintFactory.forEachIncludingUnassigned(Stay.class),
                         equal(Function.identity(), Stay::getDepartment),
                         greaterThan(Department::getMinimumAge, Stay::getPatientAge))
-                .penalize(HardSoftScore.ofHard(100),
+                .penalize(HardMediumSoftScore.ofHard(100),
                         (d, st) -> st.getNightCount())
                 .asConstraint(new ConstraintInfo(DEPARTMENT_MINIMUM_AGE, DEPARTMENT_MINIMUM_AGE,
                         "A patient must not be younger than the minimum age of the department.",
@@ -124,7 +124,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
                 .join(constraintFactory.forEachIncludingUnassigned(Stay.class),
                         equal(Function.identity(), Stay::getDepartment),
                         lessThan(Department::getMaximumAge, Stay::getPatientAge))
-                .penalize(HardSoftScore.ofHard(100),
+                .penalize(HardMediumSoftScore.ofHard(100),
                         (d, st) -> st.getNightCount())
                 .asConstraint(new ConstraintInfo(DEPARTMENT_MAXIMUM_AGE, DEPARTMENT_MAXIMUM_AGE,
                         "A patient must not be older than the maximum age of the department.",
@@ -134,7 +134,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
     Constraint requiredPatientEquipment(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Stay.class)
                 .filter(st -> !st.getRoom().getEquipments().containsAll(st.getPatientRequiredEquipments()))
-                .penalize(HardSoftScore.ofHard(50),
+                .penalize(HardMediumSoftScore.ofHard(50),
                         st -> st.getNightCount() * st.getPatientRequiredEquipments().stream()
                                 .filter(equipment -> st.getRoom().getEquipments().contains(equipment)).count())
                 .asConstraint(new ConstraintInfo(REQUIRED_PATIENT_EQUIPMENT, REQUIRED_PATIENT_EQUIPMENT,
@@ -145,7 +145,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
     Constraint assignEveryPatientToABed(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachIncludingUnassigned(Stay.class)
                 .filter(st -> st.getBed() == null)
-                .penalize(HardSoftScore.ONE_HARD, Stay::getNightCount)
+                .penalize(HardMediumSoftScore.ONE_HARD, Stay::getNightCount)
                 .asConstraint(new ConstraintInfo(ASSIGN_EVERY_PATIENT_TO_A_BED, ASSIGN_EVERY_PATIENT_TO_A_BED,
                         "Every patient stay must be assigned to a bed.",
                         BedScheduleConstraintGroup.BED_OCCUPANCY));
@@ -159,7 +159,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(Stay.class)
                 .filter(st -> st.getPatientPreferredMaximumRoomCapacity() != null
                         && st.getPatientPreferredMaximumRoomCapacity() < st.getRoom().getCapacity())
-                .penalize(HardSoftScore.ofSoft(8), Stay::getNightCount)
+                .penalize(HardMediumSoftScore.ofSoft(8), Stay::getNightCount)
                 .asConstraint(new ConstraintInfo(PREFERRED_MAXIMUM_ROOM_CAPACITY, PREFERRED_MAXIMUM_ROOM_CAPACITY,
                         "A patient prefers a room no larger than the preferred maximum capacity.",
                         BedScheduleConstraintGroup.PATIENT_COMFORT));
@@ -168,7 +168,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
     Constraint departmentSpecialty(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Stay.class)
                 .filter(st -> !st.hasDepartmentSpecialty())
-                .penalize(HardSoftScore.ofSoft(10), Stay::getNightCount)
+                .penalize(HardMediumSoftScore.ofSoft(10), Stay::getNightCount)
                 .asConstraint(new ConstraintInfo(DEPARTMENT_SPECIALTY, DEPARTMENT_SPECIALTY,
                         "A patient should stay in a department that handles their specialty.",
                         BedScheduleConstraintGroup.PATIENT_COMFORT));
@@ -177,7 +177,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
     Constraint departmentSpecialtyNotFirstPriority(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Stay.class)
                 .filter(st -> st.hasDepartmentSpecialty() && st.getSpecialtyPriority() > 1)
-                .penalize(HardSoftScore.ofSoft(10),
+                .penalize(HardMediumSoftScore.ofSoft(10),
                         stay -> (long) (stay.getSpecialtyPriority() - 1) * stay.getNightCount())
                 .asConstraint(new ConstraintInfo(DEPARTMENT_SPECIALTY_NOT_FIRST_PRIORITY,
                         DEPARTMENT_SPECIALTY_NOT_FIRST_PRIORITY,
@@ -188,7 +188,7 @@ public class BedScheduleConstraintProvider implements ConstraintProvider {
     Constraint preferredPatientEquipment(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Stay.class)
                 .filter(st -> !st.getRoom().getEquipments().containsAll(st.getPatientPreferredEquipments()))
-                .penalize(HardSoftScore.ofSoft(50),
+                .penalize(HardMediumSoftScore.ofSoft(50),
                         st -> st.getNightCount() * st.getPatientPreferredEquipments().stream()
                                 .filter(equipment -> !st.getRoom().getEquipments().contains(equipment)).count())
                 .asConstraint(new ConstraintInfo(PREFERRED_PATIENT_EQUIPMENT, PREFERRED_PATIENT_EQUIPMENT,

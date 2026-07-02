@@ -3,7 +3,7 @@ package org.acme.schooltimetabling.solver;
 import java.time.Duration;
 import java.util.Objects;
 
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
@@ -38,7 +38,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .forEachUniquePair(Lesson.class,
                         Joiners.equal(Lesson::getTimeslot),
                         Joiners.equal(Lesson::getRoom))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint(new ConstraintInfo(ROOM_CONFLICT, ROOM_CONFLICT,
                         "A room can accommodate at most one lesson at the same time.",
                         TimetableConstraintGroup.CONFLICT_AVOIDANCE));
@@ -49,7 +49,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .forEachUniquePair(Lesson.class,
                         Joiners.equal(Lesson::getTimeslot),
                         Joiners.equal(Lesson::getTeacher))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint(new ConstraintInfo(TEACHER_CONFLICT, TEACHER_CONFLICT,
                         "A teacher can teach at most one lesson at the same time.",
                         TimetableConstraintGroup.CONFLICT_AVOIDANCE));
@@ -60,7 +60,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .forEachUniquePair(Lesson.class,
                         Joiners.equal(Lesson::getTimeslot),
                         Joiners.equal(Lesson::getStudentGroup))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint(new ConstraintInfo(STUDENT_GROUP_CONFLICT, STUDENT_GROUP_CONFLICT,
                         "A student group can attend at most one lesson at the same time.",
                         TimetableConstraintGroup.CONFLICT_AVOIDANCE));
@@ -71,7 +71,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .forEachUniquePair(Lesson.class,
                         Joiners.equal(Lesson::getTeacher))
                 .filter((lesson1, lesson2) -> !Objects.equals(lesson1.getRoom(), lesson2.getRoom()))
-                .penalize(HardSoftScore.ONE_SOFT)
+                .penalize(HardMediumSoftScore.ONE_SOFT)
                 .asConstraint(new ConstraintInfo(TEACHER_ROOM_STABILITY, TEACHER_ROOM_STABILITY,
                         "A teacher prefers to teach in a single room.",
                         TimetableConstraintGroup.TEACHER_PREFERENCES));
@@ -87,7 +87,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                             lesson2.getTimeslot().getStartTime());
                     return !between.isNegative() && between.compareTo(Duration.ofMinutes(30)) <= 0;
                 })
-                .reward(HardSoftScore.ONE_SOFT)
+                .reward(HardMediumSoftScore.ONE_SOFT)
                 .asConstraint(new ConstraintInfo(TEACHER_TIME_EFFICIENCY, TEACHER_TIME_EFFICIENCY,
                         "A teacher prefers to teach sequential lessons and dislikes gaps between lessons.",
                         TimetableConstraintGroup.TEACHER_PREFERENCES));
@@ -105,7 +105,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                             lesson2.getTimeslot().getStartTime());
                     return !between.isNegative() && between.compareTo(Duration.ofMinutes(30)) <= 0;
                 })
-                .penalize(HardSoftScore.ONE_SOFT)
+                .penalize(HardMediumSoftScore.ONE_SOFT)
                 .asConstraint(new ConstraintInfo(STUDENT_GROUP_SUBJECT_VARIETY, STUDENT_GROUP_SUBJECT_VARIETY,
                         "A student group dislikes sequential lessons on the same subject.",
                         TimetableConstraintGroup.STUDENT_PREFERENCES));

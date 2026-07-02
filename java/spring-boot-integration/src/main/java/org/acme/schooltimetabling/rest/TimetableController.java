@@ -1,7 +1,7 @@
 package org.acme.schooltimetabling.rest;
 
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.ScoreAnalysisFetchPolicy;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverManager;
@@ -50,13 +50,13 @@ public class TimetableController {
     private static final Logger LOGGER = LoggerFactory.getLogger(TimetableController.class);
 
     private final SolverManager<Timetable> solverManager;
-    private final SolutionManager<Timetable, HardSoftScore> solutionManager;
+    private final SolutionManager<Timetable, HardMediumSoftScore> solutionManager;
 
     // TODO: Without any "time to live", the map may eventually grow out of memory.
     private final ConcurrentMap<String, Job> jobIdToJob = new ConcurrentHashMap<>();
 
     public TimetableController(SolverManager<Timetable> solverManager,
-            SolutionManager<Timetable, HardSoftScore> solutionManager) {
+            SolutionManager<Timetable, HardMediumSoftScore> solutionManager) {
         this.solverManager = solverManager;
         this.solutionManager = solutionManager;
     }
@@ -108,7 +108,7 @@ public class TimetableController {
             TeacherRoomStabilityJustification.class,
             TeacherTimeEfficiencyJustification.class
     })
-    public ScoreAnalysis<HardSoftScore> analyze(@RequestBody Timetable problem,
+    public ScoreAnalysis<HardMediumSoftScore> analyze(@RequestBody Timetable problem,
             @RequestParam(name = "fetchPolicy", required = false) ScoreAnalysisFetchPolicy fetchPolicy) {
         return fetchPolicy == null ? solutionManager.analyze(problem) : solutionManager.analyze(problem, fetchPolicy);
     }

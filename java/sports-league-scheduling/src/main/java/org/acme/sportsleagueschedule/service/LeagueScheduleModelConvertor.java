@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -28,7 +28,7 @@ import org.acme.sportsleagueschedule.solver.SportsLeagueSchedulingConstraintProv
 @ApplicationScoped
 public class LeagueScheduleModelConvertor
         implements
-        ModelConvertor<HardSoftScore, LeagueScheduleInput, LeagueScheduleConfigOverrides, LeagueSchedule, LeagueScheduleOutput> {
+        ModelConvertor<HardMediumSoftScore, LeagueScheduleInput, LeagueScheduleConfigOverrides, LeagueSchedule, LeagueScheduleOutput> {
 
     @Override
     public LeagueScheduleInput applyOutputToInput(LeagueScheduleInput modelInput, LeagueScheduleOutput modelOutput) {
@@ -100,19 +100,19 @@ public class LeagueScheduleModelConvertor
             return;
         }
         LeagueScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weightOverrides = new HashMap<>();
+        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
         weightOverrides.put(SportsLeagueSchedulingConstraintProvider.START_TO_AWAY_HOP,
-                HardSoftScore.ofSoft(overrides.startToAwayHopWeight()));
+                HardMediumSoftScore.ofSoft(overrides.startToAwayHopWeight()));
         weightOverrides.put(SportsLeagueSchedulingConstraintProvider.HOME_TO_AWAY_HOP,
-                HardSoftScore.ofSoft(overrides.homeToAwayHopWeight()));
+                HardMediumSoftScore.ofSoft(overrides.homeToAwayHopWeight()));
         weightOverrides.put(SportsLeagueSchedulingConstraintProvider.AWAY_TO_AWAY_HOP,
-                HardSoftScore.ofSoft(overrides.awayToAwayHopWeight()));
+                HardMediumSoftScore.ofSoft(overrides.awayToAwayHopWeight()));
         weightOverrides.put(SportsLeagueSchedulingConstraintProvider.AWAY_TO_HOME_HOP,
-                HardSoftScore.ofSoft(overrides.awayToHomeHopWeight()));
+                HardMediumSoftScore.ofSoft(overrides.awayToHomeHopWeight()));
         weightOverrides.put(SportsLeagueSchedulingConstraintProvider.AWAY_TO_END_HOP,
-                HardSoftScore.ofSoft(overrides.awayToEndHopWeight()));
+                HardMediumSoftScore.ofSoft(overrides.awayToEndHopWeight()));
         weightOverrides.put(SportsLeagueSchedulingConstraintProvider.CLASSIC_MATCHES,
-                HardSoftScore.ofSoft(overrides.classicMatchesWeight()));
+                HardMediumSoftScore.ofSoft(overrides.classicMatchesWeight()));
         schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
     }
 

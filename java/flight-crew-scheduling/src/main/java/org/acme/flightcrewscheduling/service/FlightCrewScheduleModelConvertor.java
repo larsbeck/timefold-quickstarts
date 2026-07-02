@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -32,7 +32,7 @@ import org.acme.flightcrewscheduling.solver.FlightCrewSchedulingConstraintProvid
 @ApplicationScoped
 public class FlightCrewScheduleModelConvertor
         implements
-        ModelConvertor<HardSoftScore, FlightCrewScheduleInput, FlightCrewScheduleConfigOverrides, FlightCrewSchedule, FlightCrewScheduleOutput> {
+        ModelConvertor<HardMediumSoftScore, FlightCrewScheduleInput, FlightCrewScheduleConfigOverrides, FlightCrewSchedule, FlightCrewScheduleOutput> {
 
     @Override
     public FlightCrewScheduleInput applyOutputToInput(FlightCrewScheduleInput modelInput,
@@ -102,11 +102,11 @@ public class FlightCrewScheduleModelConvertor
             return;
         }
         FlightCrewScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weightOverrides = new HashMap<>();
+        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
         weightOverrides.put(FlightCrewSchedulingConstraintProvider.FIRST_ASSIGNMENT_NOT_DEPARTING_FROM_HOME,
-                HardSoftScore.ofSoft(overrides.firstAssignmentNotDepartingFromHomeWeight()));
+                HardMediumSoftScore.ofSoft(overrides.firstAssignmentNotDepartingFromHomeWeight()));
         weightOverrides.put(FlightCrewSchedulingConstraintProvider.LAST_ASSIGNMENT_NOT_ARRIVING_AT_HOME,
-                HardSoftScore.ofSoft(overrides.lastAssignmentNotArrivingAtHomeWeight()));
+                HardMediumSoftScore.ofSoft(overrides.lastAssignmentNotArrivingAtHomeWeight()));
         schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
     }
 

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -31,7 +31,7 @@ import org.acme.maintenancescheduling.solver.MaintenanceScheduleConstraintProvid
 @ApplicationScoped
 public class MaintenanceScheduleModelConvertor
         implements
-        ModelConvertor<HardSoftScore, MaintenanceScheduleInput, MaintenanceScheduleConfigOverrides, MaintenanceSchedule, MaintenanceScheduleOutput> {
+        ModelConvertor<HardMediumSoftScore, MaintenanceScheduleInput, MaintenanceScheduleConfigOverrides, MaintenanceSchedule, MaintenanceScheduleOutput> {
 
     @Override
     public MaintenanceScheduleInput applyOutputToInput(MaintenanceScheduleInput modelInput,
@@ -97,13 +97,13 @@ public class MaintenanceScheduleModelConvertor
             return;
         }
         MaintenanceScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weightOverrides = new HashMap<>();
+        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
         weightOverrides.put(MaintenanceScheduleConstraintProvider.BEFORE_IDEAL_END_DATE,
-                HardSoftScore.ofSoft(overrides.beforeIdealEndDateWeight()));
+                HardMediumSoftScore.ofSoft(overrides.beforeIdealEndDateWeight()));
         weightOverrides.put(MaintenanceScheduleConstraintProvider.AFTER_IDEAL_END_DATE,
-                HardSoftScore.ofSoft(overrides.afterIdealEndDateWeight()));
+                HardMediumSoftScore.ofSoft(overrides.afterIdealEndDateWeight()));
         weightOverrides.put(MaintenanceScheduleConstraintProvider.TAG_CONFLICT,
-                HardSoftScore.ofSoft(overrides.tagConflictWeight()));
+                HardMediumSoftScore.ofSoft(overrides.tagConflictWeight()));
         schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
     }
 

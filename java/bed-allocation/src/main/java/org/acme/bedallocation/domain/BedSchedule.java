@@ -8,7 +8,7 @@ import ai.timefold.solver.core.api.domain.solution.PlanningScore;
 import ai.timefold.solver.core.api.domain.solution.PlanningSolution;
 import ai.timefold.solver.core.api.domain.solution.ProblemFactCollectionProperty;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.SolverModel;
 import ai.timefold.solver.service.definition.api.metrics.InputMetricsAware;
 import ai.timefold.solver.service.definition.api.metrics.OutputMetricsAware;
@@ -17,7 +17,7 @@ import org.acme.bedallocation.dto.BedScheduleInputMetrics;
 import org.acme.bedallocation.dto.BedScheduleOutputMetrics;
 
 @PlanningSolution
-public class BedSchedule implements SolverModel<HardSoftScore>,
+public class BedSchedule implements SolverModel<HardMediumSoftScore>,
         InputMetricsAware<BedScheduleInputMetrics>, OutputMetricsAware<BedScheduleOutputMetrics> {
 
     @ProblemFactCollectionProperty
@@ -31,9 +31,9 @@ public class BedSchedule implements SolverModel<HardSoftScore>,
     private List<Stay> stays;
 
     @PlanningScore
-    private HardSoftScore score;
+    private HardMediumSoftScore score;
 
-    private ConstraintWeightOverrides<HardSoftScore> constraintWeightOverrides = ConstraintWeightOverrides.none();
+    private ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides = ConstraintWeightOverrides.none();
 
     public BedSchedule() {
     }
@@ -78,20 +78,20 @@ public class BedSchedule implements SolverModel<HardSoftScore>,
     }
 
     @Override
-    public HardSoftScore getScore() {
+    public HardMediumSoftScore getScore() {
         return score;
     }
 
-    public void setScore(HardSoftScore score) {
+    public void setScore(HardMediumSoftScore score) {
         this.score = score;
     }
 
     @Override
-    public ConstraintWeightOverrides<HardSoftScore> getConstraintWeightOverrides() {
+    public ConstraintWeightOverrides<HardMediumSoftScore> getConstraintWeightOverrides() {
         return constraintWeightOverrides;
     }
 
-    public void setConstraintWeightOverrides(ConstraintWeightOverrides<HardSoftScore> constraintWeightOverrides) {
+    public void setConstraintWeightOverrides(ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides) {
         this.constraintWeightOverrides = constraintWeightOverrides;
     }
 

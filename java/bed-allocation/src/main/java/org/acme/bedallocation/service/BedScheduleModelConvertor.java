@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.service.definition.api.ModelConvertor;
 import ai.timefold.solver.service.definition.api.domain.ModelConfig;
 
@@ -34,7 +34,7 @@ import org.acme.bedallocation.solver.BedScheduleConstraintProvider;
 @ApplicationScoped
 public class BedScheduleModelConvertor
         implements
-        ModelConvertor<HardSoftScore, BedScheduleInput, BedScheduleConfigOverrides, BedSchedule, BedScheduleOutput> {
+        ModelConvertor<HardMediumSoftScore, BedScheduleInput, BedScheduleConfigOverrides, BedSchedule, BedScheduleOutput> {
 
     @Override
     public BedScheduleInput applyOutputToInput(BedScheduleInput modelInput, BedScheduleOutput modelOutput) {
@@ -137,15 +137,15 @@ public class BedScheduleModelConvertor
             return;
         }
         BedScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardSoftScore> weightOverrides = new HashMap<>();
+        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
         weightOverrides.put(BedScheduleConstraintProvider.PREFERRED_MAXIMUM_ROOM_CAPACITY,
-                HardSoftScore.ofSoft(overrides.preferredMaximumRoomCapacityWeight()));
+                HardMediumSoftScore.ofSoft(overrides.preferredMaximumRoomCapacityWeight()));
         weightOverrides.put(BedScheduleConstraintProvider.DEPARTMENT_SPECIALTY,
-                HardSoftScore.ofSoft(overrides.departmentSpecialtyWeight()));
+                HardMediumSoftScore.ofSoft(overrides.departmentSpecialtyWeight()));
         weightOverrides.put(BedScheduleConstraintProvider.DEPARTMENT_SPECIALTY_NOT_FIRST_PRIORITY,
-                HardSoftScore.ofSoft(overrides.departmentSpecialtyNotFirstPriorityWeight()));
+                HardMediumSoftScore.ofSoft(overrides.departmentSpecialtyNotFirstPriorityWeight()));
         weightOverrides.put(BedScheduleConstraintProvider.PREFERRED_PATIENT_EQUIPMENT,
-                HardSoftScore.ofSoft(overrides.preferredPatientEquipmentWeight()));
+                HardMediumSoftScore.ofSoft(overrides.preferredPatientEquipmentWeight()));
         schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
     }
 

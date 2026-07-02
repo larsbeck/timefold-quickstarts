@@ -107,7 +107,7 @@
           <tenants>
             <tenant>dc6f4fa5-5f53-4f00-abac-464a6fca24d7</tenant>
           </tenants>
-          <!-- <overwrite>true</overwrite> -->
+          <overwrite>true</overwrite>
           <handleSubscription>true</handleSubscription>
         </configuration>
         <executions>

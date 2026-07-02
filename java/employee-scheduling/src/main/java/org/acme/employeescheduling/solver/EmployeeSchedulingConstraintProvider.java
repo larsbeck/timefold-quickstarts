@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.function.Function;
 
-import ai.timefold.solver.core.api.score.HardSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
@@ -55,7 +55,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
     Constraint requiredSkill(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Shift.class)
                 .filter(shift -> !shift.getEmployee().getSkills().contains(shift.getRequiredSkill()))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint(new ConstraintInfo(REQUIRED_SKILL, REQUIRED_SKILL,
                         "An employee must have the required skill to cover a shift.",
                         EmployeeScheduleConstraintGroup.SHIFT_COVERAGE));
@@ -64,7 +64,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
     Constraint noOverlappingShifts(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(Shift.class, equal(Shift::getEmployee),
                 overlapping(Shift::getStart, Shift::getEnd))
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardMediumSoftScore.ONE_HARD,
                         EmployeeSchedulingConstraintProvider::getMinuteOverlap)
                 .asConstraint(new ConstraintInfo(NO_OVERLAPPING_SHIFTS, NO_OVERLAPPING_SHIFTS,
                         "An employee cannot cover two shifts that overlap in time.",
@@ -76,7 +76,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
                 .filter((firstShift,
                         secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() < 10)
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardMediumSoftScore.ONE_HARD,
                         (firstShift, secondShift) -> {
                             long breakLength =
                                     Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
@@ -91,7 +91,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
     Constraint oneShiftPerDay(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(Shift.class, equal(Shift::getEmployee),
                 equal(shift -> shift.getStart().toLocalDate()))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint(new ConstraintInfo(ONE_SHIFT_PER_DAY, ONE_SHIFT_PER_DAY,
                         "An employee can only cover one shift per day.",
                         EmployeeScheduleConstraintGroup.SHIFT_COVERAGE));
@@ -102,7 +102,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
                 .flattenLast(Employee::getUnavailableDates)
                 .filter(Shift::isOverlappingWithDate)
-                .penalize(HardSoftScore.ONE_HARD, Shift::getOverlappingDurationInMinutes)
+                .penalize(HardMediumSoftScore.ONE_HARD, Shift::getOverlappingDurationInMinutes)
                 .asConstraint(new ConstraintInfo(UNAVAILABLE_EMPLOYEE, UNAVAILABLE_EMPLOYEE,
                         "An employee cannot be assigned to a shift on a day they are unavailable.",
                         EmployeeScheduleConstraintGroup.EMPLOYEE_AVAILABILITY));
@@ -113,7 +113,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
                 .flattenLast(Employee::getUndesiredDates)
                 .filter(Shift::isOverlappingWithDate)
-                .penalize(HardSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
+                .penalize(HardMediumSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
                 .asConstraint(new ConstraintInfo(UNDESIRED_DAY_FOR_EMPLOYEE, UNDESIRED_DAY_FOR_EMPLOYEE,
                         "An employee should not be assigned to a shift on a day they would prefer not to work.",
                         EmployeeScheduleConstraintGroup.EMPLOYEE_AVAILABILITY));
@@ -124,7 +124,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
                 .flattenLast(Employee::getDesiredDates)
                 .filter(Shift::isOverlappingWithDate)
-                .reward(HardSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
+                .reward(HardMediumSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
                 .asConstraint(new ConstraintInfo(DESIRED_DAY_FOR_EMPLOYEE, DESIRED_DAY_FOR_EMPLOYEE,
                         "An employee should be assigned to a shift on a day they would prefer to work.",
                         EmployeeScheduleConstraintGroup.EMPLOYEE_AVAILABILITY));
@@ -136,7 +136,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .complement(Employee.class, e -> 0L)
                 .groupBy(ConstraintCollectors.loadBalance((employee, shiftCount) -> employee,
                         (employee, shiftCount) -> shiftCount))
-                .penalize(HardSoftScore.ONE_SOFT,
+                .penalize(HardMediumSoftScore.ONE_SOFT,
                         loadBalance -> loadBalance.unfairness().movePointRight(6).longValue())
                 .asConstraint(new ConstraintInfo(BALANCE_EMPLOYEE_SHIFT_ASSIGNMENTS,
                         BALANCE_EMPLOYEE_SHIFT_ASSIGNMENTS,
