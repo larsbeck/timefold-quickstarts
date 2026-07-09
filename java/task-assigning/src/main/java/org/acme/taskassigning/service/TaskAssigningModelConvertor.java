@@ -144,18 +144,28 @@ public class TaskAssigningModelConvertor
             return;
         }
         TaskAssigningConfigOverrides overrides = modelConfig.overrides();
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
         Map<String, BendableScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(TaskAssigningConstraintProvider.MINIMIZE_UNASSIGNED_TASKS,
-                BendableScore.ofSoft(HARD_LEVELS, SOFT_LEVELS, 0, overrides.minimizeUnassignedTasksWeight()));
-        weightOverrides.put(TaskAssigningConstraintProvider.MINIMIZE_MAKESPAN,
-                BendableScore.ofSoft(HARD_LEVELS, SOFT_LEVELS, 1, overrides.minimizeMakespanWeight()));
-        weightOverrides.put(TaskAssigningConstraintProvider.CRITICAL_PRIORITY_TASK_END_TIME,
-                BendableScore.ofSoft(HARD_LEVELS, SOFT_LEVELS, 2, overrides.criticalPriorityWeight()));
-        weightOverrides.put(TaskAssigningConstraintProvider.MAJOR_PRIORITY_TASK_END_TIME,
-                BendableScore.ofSoft(HARD_LEVELS, SOFT_LEVELS, 2, overrides.majorPriorityWeight()));
-        weightOverrides.put(TaskAssigningConstraintProvider.MINOR_PRIORITY_TASK_END_TIME,
-                BendableScore.ofSoft(HARD_LEVELS, SOFT_LEVELS, 2, overrides.minorPriorityWeight()));
-        solution.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        putIfPresent(weightOverrides, TaskAssigningConstraintProvider.MINIMIZE_UNASSIGNED_TASKS, 0,
+                overrides.minimizeUnassignedTasksWeight());
+        putIfPresent(weightOverrides, TaskAssigningConstraintProvider.MINIMIZE_MAKESPAN, 1,
+                overrides.minimizeMakespanWeight());
+        putIfPresent(weightOverrides, TaskAssigningConstraintProvider.CRITICAL_PRIORITY_TASK_END_TIME, 2,
+                overrides.criticalPriorityWeight());
+        putIfPresent(weightOverrides, TaskAssigningConstraintProvider.MAJOR_PRIORITY_TASK_END_TIME, 2,
+                overrides.majorPriorityWeight());
+        putIfPresent(weightOverrides, TaskAssigningConstraintProvider.MINOR_PRIORITY_TASK_END_TIME, 2,
+                overrides.minorPriorityWeight());
+        if (!weightOverrides.isEmpty()) {
+            solution.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        }
+    }
+
+    private static void putIfPresent(Map<String, BendableScore> weights, String constraintName, int softLevel, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, BendableScore.ofSoft(HARD_LEVELS, SOFT_LEVELS, softLevel, weight));
+        }
     }
 
     @Override

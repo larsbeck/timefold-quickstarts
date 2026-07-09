@@ -151,14 +151,30 @@ public class PackagingScheduleModelConvertor
             return;
         }
         PackagingScheduleConfigOverrides overrides = modelConfig.overrides();
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
         Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(FoodPackagingConstraintProvider.IDEAL_END_DATE_TIME,
-                HardMediumSoftScore.ofMedium(overrides.idealEndDateTimeWeight()));
-        weightOverrides.put(FoodPackagingConstraintProvider.MAXIMIZE_JOBS_ASSIGNED,
-                HardMediumSoftScore.ofMedium(overrides.maximizeJobsAssignedWeight()));
-        weightOverrides.put(FoodPackagingConstraintProvider.MINIMIZE_MAKESPAN,
-                HardMediumSoftScore.ofSoft(overrides.minimizeMakespanWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        putMediumIfPresent(weightOverrides, FoodPackagingConstraintProvider.IDEAL_END_DATE_TIME,
+                overrides.idealEndDateTimeWeight());
+        putMediumIfPresent(weightOverrides, FoodPackagingConstraintProvider.MAXIMIZE_JOBS_ASSIGNED,
+                overrides.maximizeJobsAssignedWeight());
+        putSoftIfPresent(weightOverrides, FoodPackagingConstraintProvider.MINIMIZE_MAKESPAN,
+                overrides.minimizeMakespanWeight());
+        if (!weightOverrides.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        }
+    }
+
+    private static void putMediumIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofMedium(weight));
+        }
+    }
+
+    private static void putSoftIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<Line> lines, Map<String, Job> jobMap,

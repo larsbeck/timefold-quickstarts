@@ -97,14 +97,23 @@ public class MaintenanceScheduleModelConvertor
             return;
         }
         MaintenanceScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(MaintenanceScheduleConstraintProvider.BEFORE_IDEAL_END_DATE,
-                HardMediumSoftScore.ofSoft(overrides.beforeIdealEndDateWeight()));
-        weightOverrides.put(MaintenanceScheduleConstraintProvider.AFTER_IDEAL_END_DATE,
-                HardMediumSoftScore.ofSoft(overrides.afterIdealEndDateWeight()));
-        weightOverrides.put(MaintenanceScheduleConstraintProvider.TAG_CONFLICT,
-                HardMediumSoftScore.ofSoft(overrides.tagConflictWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, MaintenanceScheduleConstraintProvider.BEFORE_IDEAL_END_DATE,
+                overrides.beforeIdealEndDateWeight());
+        putIfPresent(weights, MaintenanceScheduleConstraintProvider.AFTER_IDEAL_END_DATE,
+                overrides.afterIdealEndDateWeight());
+        putIfPresent(weights, MaintenanceScheduleConstraintProvider.TAG_CONFLICT, overrides.tagConflictWeight());
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<Job> jobs, Map<String, Crew> crewMap,

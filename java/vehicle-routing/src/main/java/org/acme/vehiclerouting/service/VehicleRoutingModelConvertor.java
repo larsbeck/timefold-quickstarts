@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.LongFunction;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -135,12 +136,24 @@ public class VehicleRoutingModelConvertor
             return;
         }
         VehicleRoutingConfigOverrides overrides = modelConfig.overrides();
+        // Only apply weights that are actually set (non-null) in the merged overrides.
+        // A null weight means the input did not override it, so the configuration profile value
+        // (or the constraint's default) is kept.
         Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(VehicleRoutingConstraintProvider.MAXIMIZE_VISITS_ASSIGNED,
-                HardMediumSoftScore.ofMedium(overrides.maximizeVisitsAssignedWeight()));
-        weightOverrides.put(VehicleRoutingConstraintProvider.MINIMIZE_TRAVEL_TIME,
-                HardMediumSoftScore.ofSoft(overrides.minimizeTravelTimeWeight()));
-        solution.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        putIfPresent(weightOverrides, VehicleRoutingConstraintProvider.MAXIMIZE_VISITS_ASSIGNED,
+                overrides.maximizeVisitsAssignedWeight(), HardMediumSoftScore::ofMedium);
+        putIfPresent(weightOverrides, VehicleRoutingConstraintProvider.MINIMIZE_TRAVEL_TIME,
+                overrides.minimizeTravelTimeWeight(), HardMediumSoftScore::ofSoft);
+        if (!weightOverrides.isEmpty()) {
+            solution.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight,
+            LongFunction<HardMediumSoftScore> scoreFactory) {
+        if (weight != null) {
+            weights.put(constraintName, scoreFactory.apply(weight));
+        }
     }
 
     @Override

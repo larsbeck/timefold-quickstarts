@@ -33,8 +33,11 @@ public class DemoDataGenerator
                 .addLocalResource("5", SECOND_PROJECT, 66, false)
                 .addLocalResource("6", SECOND_PROJECT, 56, false)
                 .build();
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a ProjectJobScheduleConfigOverrides and set only those.
         Configuration<ProjectJobScheduleConfigOverrides> configuration = new Configuration<>(
-                new RunConfiguration("BASIC"), new ModelConfig<>(new ProjectJobScheduleConfigOverrides()));
+                new RunConfiguration("BASIC"), ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

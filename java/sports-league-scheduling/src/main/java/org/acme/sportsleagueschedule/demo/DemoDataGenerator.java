@@ -23,8 +23,11 @@ public class DemoDataGenerator
         LeagueScheduleInput problem = DemoDataBuilder.builder().build();
         RunConfiguration runConfiguration = new RunConfiguration("BASIC",
                 new SolverTerminationConfig(Duration.ofSeconds(30), null));
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a LeagueScheduleConfigOverrides and set only those.
         Configuration<LeagueScheduleConfigOverrides> configuration = new Configuration<>(
-                runConfiguration, new ModelConfig<>(new LeagueScheduleConfigOverrides()));
+                runConfiguration, ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

@@ -26,8 +26,11 @@ public class DemoDataGenerator
                 .setDayCount(5)
                 .build();
         SolverTerminationConfig termination = new SolverTerminationConfig(Duration.ofSeconds(30), null);
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a FlightCrewScheduleConfigOverrides and set only those.
         Configuration<FlightCrewScheduleConfigOverrides> configuration = new Configuration<>(
-                new RunConfiguration("BASIC", termination), new ModelConfig<>(new FlightCrewScheduleConfigOverrides()));
+                new RunConfiguration("BASIC", termination), ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

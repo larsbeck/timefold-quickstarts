@@ -35,7 +35,10 @@ public class DemoDataGenerator
                 .build();
         SolverTerminationConfig termination = new SolverTerminationConfig(DEMO_SPENT_LIMIT, null);
         RunConfiguration runConfiguration = new RunConfiguration("BASIC", termination);
-        ModelConfig<OrderPickingConfigOverrides> modelConfig = new ModelConfig<>(new OrderPickingConfigOverrides());
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build an OrderPickingConfigOverrides and set only those.
+        ModelConfig<OrderPickingConfigOverrides> modelConfig = ModelConfig.empty();
         Configuration<OrderPickingConfigOverrides> configuration = new Configuration<>(runConfiguration, modelConfig);
         return new ModelRequest<>(configuration, problem);
     }

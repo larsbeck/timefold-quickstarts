@@ -110,14 +110,24 @@ public class OrderPickingModelConvertor
             return;
         }
         OrderPickingConfigOverrides overrides = modelConfig.overrides();
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
         Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(OrderPickingConstraintProvider.MINIMIZE_DISTANCE_FROM_PREVIOUS_PICK,
-                HardMediumSoftScore.ofSoft(overrides.minimizeDistanceFromPreviousPickWeight()));
-        weightOverrides.put(OrderPickingConstraintProvider.MINIMIZE_DISTANCE_TO_PATH_ORIGIN,
-                HardMediumSoftScore.ofSoft(overrides.minimizeDistanceToPathOriginWeight()));
-        weightOverrides.put(OrderPickingConstraintProvider.MINIMIZE_ORDER_SPLIT_BY_TROLLEY,
-                HardMediumSoftScore.ofSoft(overrides.minimizeOrderSplitByTrolleyWeight()));
-        solution.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        putIfPresent(weightOverrides, OrderPickingConstraintProvider.MINIMIZE_DISTANCE_FROM_PREVIOUS_PICK,
+                overrides.minimizeDistanceFromPreviousPickWeight());
+        putIfPresent(weightOverrides, OrderPickingConstraintProvider.MINIMIZE_DISTANCE_TO_PATH_ORIGIN,
+                overrides.minimizeDistanceToPathOriginWeight());
+        putIfPresent(weightOverrides, OrderPickingConstraintProvider.MINIMIZE_ORDER_SPLIT_BY_TROLLEY,
+                overrides.minimizeOrderSplitByTrolleyWeight());
+        if (!weightOverrides.isEmpty()) {
+            solution.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     @Override

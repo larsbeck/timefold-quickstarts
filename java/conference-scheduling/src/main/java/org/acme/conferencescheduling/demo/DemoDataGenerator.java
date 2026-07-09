@@ -18,8 +18,11 @@ public class DemoDataGenerator
     @Override
     protected ModelRequest<ConferenceScheduleInput, ConferenceScheduleConfigOverrides> generateBasicDemoDataRequest() {
         ConferenceScheduleInput problem = DemoDataBuilder.builder().build();
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a ConferenceScheduleConfigOverrides and set only those.
         Configuration<ConferenceScheduleConfigOverrides> configuration = new Configuration<>(
-                new RunConfiguration("BASIC"), new ModelConfig<>(new ConferenceScheduleConfigOverrides()));
+                new RunConfiguration("BASIC"), ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

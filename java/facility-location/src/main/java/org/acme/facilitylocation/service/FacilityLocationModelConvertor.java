@@ -85,12 +85,21 @@ public class FacilityLocationModelConvertor
             return;
         }
         FacilityLocationConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(FacilityLocationConstraintProvider.FACILITY_SETUP_COST,
-                HardMediumSoftScore.ofSoft(overrides.setupCostWeight()));
-        weightOverrides.put(FacilityLocationConstraintProvider.DISTANCE_FROM_FACILITY,
-                HardMediumSoftScore.ofSoft(overrides.distanceFromFacilityWeight()));
-        problem.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, FacilityLocationConstraintProvider.FACILITY_SETUP_COST, overrides.setupCostWeight());
+        putIfPresent(weights, FacilityLocationConstraintProvider.DISTANCE_FROM_FACILITY,
+                overrides.distanceFromFacilityWeight());
+        if (!weights.isEmpty()) {
+            problem.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<Consumer> consumers, Map<String, Facility> facilityMap,

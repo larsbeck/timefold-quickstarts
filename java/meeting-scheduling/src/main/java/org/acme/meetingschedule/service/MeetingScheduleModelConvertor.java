@@ -123,18 +123,28 @@ public class MeetingScheduleModelConvertor
             return;
         }
         MeetingScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(MeetingScheduleConstraintProperties.DO_ALL_MEETINGS_AS_SOON_AS_POSSIBLE,
-                HardMediumSoftScore.ofSoft(overrides.doMeetingsAsSoonAsPossibleWeight()));
-        weightOverrides.put(MeetingScheduleConstraintProperties.ONE_TIME_GRAIN_BREAK_BETWEEN_TWO_CONSECUTIVE_MEETINGS,
-                HardMediumSoftScore.ofSoft(overrides.oneBreakBetweenConsecutiveMeetingsWeight()));
-        weightOverrides.put(MeetingScheduleConstraintProperties.OVERLAPPING_MEETINGS,
-                HardMediumSoftScore.ofSoft(overrides.overlappingMeetingsWeight()));
-        weightOverrides.put(MeetingScheduleConstraintProperties.ASSIGN_LARGER_ROOMS_FIRST,
-                HardMediumSoftScore.ofSoft(overrides.assignLargerRoomsFirstWeight()));
-        weightOverrides.put(MeetingScheduleConstraintProperties.ROOM_STABILITY,
-                HardMediumSoftScore.ofSoft(overrides.roomStabilityWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, MeetingScheduleConstraintProperties.DO_ALL_MEETINGS_AS_SOON_AS_POSSIBLE,
+                overrides.doMeetingsAsSoonAsPossibleWeight());
+        putIfPresent(weights, MeetingScheduleConstraintProperties.ONE_TIME_GRAIN_BREAK_BETWEEN_TWO_CONSECUTIVE_MEETINGS,
+                overrides.oneBreakBetweenConsecutiveMeetingsWeight());
+        putIfPresent(weights, MeetingScheduleConstraintProperties.OVERLAPPING_MEETINGS,
+                overrides.overlappingMeetingsWeight());
+        putIfPresent(weights, MeetingScheduleConstraintProperties.ASSIGN_LARGER_ROOMS_FIRST,
+                overrides.assignLargerRoomsFirstWeight());
+        putIfPresent(weights, MeetingScheduleConstraintProperties.ROOM_STABILITY,
+                overrides.roomStabilityWeight());
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<MeetingAssignment> assignments, Map<String, TimeGrain> timeGrainMap,

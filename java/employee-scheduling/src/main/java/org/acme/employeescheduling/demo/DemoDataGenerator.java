@@ -26,8 +26,11 @@ public class DemoDataGenerator
                 .build();
         RunConfiguration runConfiguration = new RunConfiguration("BASIC",
                 new SolverTerminationConfig(Duration.ofSeconds(30), null));
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build an EmployeeScheduleConfigOverrides and set only those.
         Configuration<EmployeeScheduleConfigOverrides> configuration = new Configuration<>(
-                runConfiguration, new ModelConfig<>(new EmployeeScheduleConfigOverrides()));
+                runConfiguration, ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

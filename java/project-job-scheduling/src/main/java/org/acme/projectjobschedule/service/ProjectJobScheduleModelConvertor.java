@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.LongFunction;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -191,12 +192,23 @@ public class ProjectJobScheduleModelConvertor implements
             return;
         }
         ProjectJobScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(ProjectJobScheduleConstraintProperties.TOTAL_PROJECT_DELAY,
-                HardMediumSoftScore.ofMedium(overrides.totalProjectDelayWeight()));
-        weightOverrides.put(ProjectJobScheduleConstraintProperties.TOTAL_MAKESPAN,
-                HardMediumSoftScore.ofSoft(overrides.totalMakespanWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, ProjectJobScheduleConstraintProperties.TOTAL_PROJECT_DELAY,
+                overrides.totalProjectDelayWeight(), HardMediumSoftScore::ofMedium);
+        putIfPresent(weights, ProjectJobScheduleConstraintProperties.TOTAL_MAKESPAN,
+                overrides.totalMakespanWeight(), HardMediumSoftScore::ofSoft);
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight,
+            LongFunction<HardMediumSoftScore> scoreFactory) {
+        if (weight != null) {
+            weights.put(constraintName, scoreFactory.apply(weight));
+        }
     }
 
     private static void applyLastOutput(Map<String, Allocation> allocationMap,

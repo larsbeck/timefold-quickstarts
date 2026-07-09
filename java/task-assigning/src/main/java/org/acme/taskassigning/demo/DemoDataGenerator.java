@@ -26,9 +26,11 @@ public class DemoDataGenerator
         TaskAssigningInput problem = DemoDataBuilder.builder().build();
         SolverTerminationConfig termination = new SolverTerminationConfig(DEMO_SPENT_LIMIT, null);
         RunConfiguration runConfiguration = new RunConfiguration("BASIC", termination);
-        TaskAssigningConfigOverrides overrides = new TaskAssigningConfigOverrides();
-        ModelConfig<TaskAssigningConfigOverrides> modelConfig = new ModelConfig<>(overrides);
-        Configuration<TaskAssigningConfigOverrides> configuration = new Configuration<>(runConfiguration, modelConfig);
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a TaskAssigningConfigOverrides and set only those.
+        Configuration<TaskAssigningConfigOverrides> configuration = new Configuration<>(runConfiguration,
+                ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

@@ -89,14 +89,24 @@ public class TimetableModelConvertor
             return;
         }
         TimetableConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(TimetableConstraintProvider.TEACHER_ROOM_STABILITY,
-                HardMediumSoftScore.ofSoft(overrides.teacherRoomStabilityWeight()));
-        weightOverrides.put(TimetableConstraintProvider.TEACHER_TIME_EFFICIENCY,
-                HardMediumSoftScore.ofSoft(overrides.teacherTimeEfficiencyWeight()));
-        weightOverrides.put(TimetableConstraintProvider.STUDENT_GROUP_SUBJECT_VARIETY,
-                HardMediumSoftScore.ofSoft(overrides.studentGroupSubjectVarietyWeight()));
-        timetable.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, TimetableConstraintProvider.TEACHER_ROOM_STABILITY,
+                overrides.teacherRoomStabilityWeight());
+        putIfPresent(weights, TimetableConstraintProvider.TEACHER_TIME_EFFICIENCY,
+                overrides.teacherTimeEfficiencyWeight());
+        putIfPresent(weights, TimetableConstraintProvider.STUDENT_GROUP_SUBJECT_VARIETY,
+                overrides.studentGroupSubjectVarietyWeight());
+        if (!weights.isEmpty()) {
+            timetable.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<Lesson> lessons, Map<String, Timeslot> timeslotMap,

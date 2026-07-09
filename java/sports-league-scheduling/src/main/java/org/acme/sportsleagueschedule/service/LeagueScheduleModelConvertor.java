@@ -100,20 +100,30 @@ public class LeagueScheduleModelConvertor
             return;
         }
         LeagueScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(SportsLeagueSchedulingConstraintProvider.START_TO_AWAY_HOP,
-                HardMediumSoftScore.ofSoft(overrides.startToAwayHopWeight()));
-        weightOverrides.put(SportsLeagueSchedulingConstraintProvider.HOME_TO_AWAY_HOP,
-                HardMediumSoftScore.ofSoft(overrides.homeToAwayHopWeight()));
-        weightOverrides.put(SportsLeagueSchedulingConstraintProvider.AWAY_TO_AWAY_HOP,
-                HardMediumSoftScore.ofSoft(overrides.awayToAwayHopWeight()));
-        weightOverrides.put(SportsLeagueSchedulingConstraintProvider.AWAY_TO_HOME_HOP,
-                HardMediumSoftScore.ofSoft(overrides.awayToHomeHopWeight()));
-        weightOverrides.put(SportsLeagueSchedulingConstraintProvider.AWAY_TO_END_HOP,
-                HardMediumSoftScore.ofSoft(overrides.awayToEndHopWeight()));
-        weightOverrides.put(SportsLeagueSchedulingConstraintProvider.CLASSIC_MATCHES,
-                HardMediumSoftScore.ofSoft(overrides.classicMatchesWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, SportsLeagueSchedulingConstraintProvider.START_TO_AWAY_HOP,
+                overrides.startToAwayHopWeight());
+        putIfPresent(weights, SportsLeagueSchedulingConstraintProvider.HOME_TO_AWAY_HOP,
+                overrides.homeToAwayHopWeight());
+        putIfPresent(weights, SportsLeagueSchedulingConstraintProvider.AWAY_TO_AWAY_HOP,
+                overrides.awayToAwayHopWeight());
+        putIfPresent(weights, SportsLeagueSchedulingConstraintProvider.AWAY_TO_HOME_HOP,
+                overrides.awayToHomeHopWeight());
+        putIfPresent(weights, SportsLeagueSchedulingConstraintProvider.AWAY_TO_END_HOP,
+                overrides.awayToEndHopWeight());
+        putIfPresent(weights, SportsLeagueSchedulingConstraintProvider.CLASSIC_MATCHES,
+                overrides.classicMatchesWeight());
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<Match> matches, Map<Integer, Round> roundMap,

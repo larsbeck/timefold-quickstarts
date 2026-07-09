@@ -137,16 +137,26 @@ public class BedScheduleModelConvertor
             return;
         }
         BedScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(BedScheduleConstraintProvider.PREFERRED_MAXIMUM_ROOM_CAPACITY,
-                HardMediumSoftScore.ofSoft(overrides.preferredMaximumRoomCapacityWeight()));
-        weightOverrides.put(BedScheduleConstraintProvider.DEPARTMENT_SPECIALTY,
-                HardMediumSoftScore.ofSoft(overrides.departmentSpecialtyWeight()));
-        weightOverrides.put(BedScheduleConstraintProvider.DEPARTMENT_SPECIALTY_NOT_FIRST_PRIORITY,
-                HardMediumSoftScore.ofSoft(overrides.departmentSpecialtyNotFirstPriorityWeight()));
-        weightOverrides.put(BedScheduleConstraintProvider.PREFERRED_PATIENT_EQUIPMENT,
-                HardMediumSoftScore.ofSoft(overrides.preferredPatientEquipmentWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, BedScheduleConstraintProvider.PREFERRED_MAXIMUM_ROOM_CAPACITY,
+                overrides.preferredMaximumRoomCapacityWeight());
+        putIfPresent(weights, BedScheduleConstraintProvider.DEPARTMENT_SPECIALTY,
+                overrides.departmentSpecialtyWeight());
+        putIfPresent(weights, BedScheduleConstraintProvider.DEPARTMENT_SPECIALTY_NOT_FIRST_PRIORITY,
+                overrides.departmentSpecialtyNotFirstPriorityWeight());
+        putIfPresent(weights, BedScheduleConstraintProvider.PREFERRED_PATIENT_EQUIPMENT,
+                overrides.preferredPatientEquipmentWeight());
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<Stay> stays, Map<String, Bed> bedMap,

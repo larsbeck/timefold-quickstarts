@@ -171,48 +171,51 @@ public class ConferenceScheduleModelConvertor
             return;
         }
         ConferenceScheduleConfigOverrides overrides = modelConfig.overrides();
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
         Map<String, HardMediumSoftScore> weights = new HashMap<>();
-        weights.put(ConferenceConstraintProperties.THEME_TRACK_CONFLICT,
-                HardMediumSoftScore.ofSoft(overrides.themeTrackConflictWeight()));
-        weights.put(ConferenceConstraintProperties.THEME_TRACK_ROOM_STABILITY,
-                HardMediumSoftScore.ofSoft(overrides.themeTrackRoomStabilityWeight()));
-        weights.put(ConferenceConstraintProperties.SECTOR_CONFLICT,
-                HardMediumSoftScore.ofSoft(overrides.sectorConflictWeight()));
-        weights.put(ConferenceConstraintProperties.AUDIENCE_TYPE_DIVERSITY,
-                HardMediumSoftScore.ofSoft(overrides.audienceTypeDiversityWeight()));
-        weights.put(ConferenceConstraintProperties.AUDIENCE_TYPE_THEME_TRACK_CONFLICT,
-                HardMediumSoftScore.ofSoft(overrides.audienceTypeThemeTrackConflictWeight()));
-        weights.put(ConferenceConstraintProperties.AUDIENCE_LEVEL_DIVERSITY,
-                HardMediumSoftScore.ofSoft(overrides.audienceLevelDiversityWeight()));
-        weights.put(ConferenceConstraintProperties.CONTENT_AUDIENCE_LEVEL_FLOW_VIOLATION,
-                HardMediumSoftScore.ofSoft(overrides.contentAudienceLevelFlowViolationWeight()));
-        weights.put(ConferenceConstraintProperties.CONTENT_CONFLICT,
-                HardMediumSoftScore.ofSoft(overrides.contentConflictWeight()));
-        weights.put(ConferenceConstraintProperties.LANGUAGE_DIVERSITY,
-                HardMediumSoftScore.ofSoft(overrides.languageDiversityWeight()));
-        weights.put(ConferenceConstraintProperties.SAME_DAY_TALKS,
-                HardMediumSoftScore.ofSoft(overrides.sameDayTalksWeight()));
-        weights.put(ConferenceConstraintProperties.POPULAR_TALKS,
-                HardMediumSoftScore.ofSoft(overrides.popularTalksWeight()));
-        weights.put(ConferenceConstraintProperties.SPEAKER_PREFERRED_TIMESLOT_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.speakerPreferredTimeslotTagsWeight()));
-        weights.put(ConferenceConstraintProperties.SPEAKER_UNDESIRED_TIMESLOT_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.speakerUndesiredTimeslotTagsWeight()));
-        weights.put(ConferenceConstraintProperties.TALK_PREFERRED_TIMESLOT_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.talkPreferredTimeslotTagsWeight()));
-        weights.put(ConferenceConstraintProperties.TALK_UNDESIRED_TIMESLOT_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.talkUndesiredTimeslotTagsWeight()));
-        weights.put(ConferenceConstraintProperties.SPEAKER_PREFERRED_ROOM_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.speakerPreferredRoomTagsWeight()));
-        weights.put(ConferenceConstraintProperties.SPEAKER_UNDESIRED_ROOM_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.speakerUndesiredRoomTagsWeight()));
-        weights.put(ConferenceConstraintProperties.TALK_PREFERRED_ROOM_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.talkPreferredRoomTagsWeight()));
-        weights.put(ConferenceConstraintProperties.TALK_UNDESIRED_ROOM_TAGS,
-                HardMediumSoftScore.ofSoft(overrides.talkUndesiredRoomTagsWeight()));
-        weights.put(ConferenceConstraintProperties.SPEAKER_MAKESPAN,
-                HardMediumSoftScore.ofSoft(overrides.speakerMakespanWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        putIfPresent(weights, ConferenceConstraintProperties.THEME_TRACK_CONFLICT, overrides.themeTrackConflictWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.THEME_TRACK_ROOM_STABILITY,
+                overrides.themeTrackRoomStabilityWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.SECTOR_CONFLICT, overrides.sectorConflictWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.AUDIENCE_TYPE_DIVERSITY,
+                overrides.audienceTypeDiversityWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.AUDIENCE_TYPE_THEME_TRACK_CONFLICT,
+                overrides.audienceTypeThemeTrackConflictWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.AUDIENCE_LEVEL_DIVERSITY,
+                overrides.audienceLevelDiversityWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.CONTENT_AUDIENCE_LEVEL_FLOW_VIOLATION,
+                overrides.contentAudienceLevelFlowViolationWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.CONTENT_CONFLICT, overrides.contentConflictWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.LANGUAGE_DIVERSITY, overrides.languageDiversityWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.SAME_DAY_TALKS, overrides.sameDayTalksWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.POPULAR_TALKS, overrides.popularTalksWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.SPEAKER_PREFERRED_TIMESLOT_TAGS,
+                overrides.speakerPreferredTimeslotTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.SPEAKER_UNDESIRED_TIMESLOT_TAGS,
+                overrides.speakerUndesiredTimeslotTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.TALK_PREFERRED_TIMESLOT_TAGS,
+                overrides.talkPreferredTimeslotTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.TALK_UNDESIRED_TIMESLOT_TAGS,
+                overrides.talkUndesiredTimeslotTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.SPEAKER_PREFERRED_ROOM_TAGS,
+                overrides.speakerPreferredRoomTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.SPEAKER_UNDESIRED_ROOM_TAGS,
+                overrides.speakerUndesiredRoomTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.TALK_PREFERRED_ROOM_TAGS,
+                overrides.talkPreferredRoomTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.TALK_UNDESIRED_ROOM_TAGS,
+                overrides.talkUndesiredRoomTagsWeight());
+        putIfPresent(weights, ConferenceConstraintProperties.SPEAKER_MAKESPAN, overrides.speakerMakespanWeight());
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(Map<String, Talk> talkMap, Map<String, Timeslot> timeslotMap,

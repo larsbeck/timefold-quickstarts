@@ -23,8 +23,11 @@ public class DemoDataGenerator
                 .setConsumerCount(60).setSouthWestCorner(new LocationDTO(51.44, -0.16))
                 .setNorthEastCorner(new LocationDTO(51.56, -0.01)).setAverageSetupCost(50_000)
                 .setSetupCostStandardDeviation(10_000).build();
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a FacilityLocationConfigOverrides and set only those.
         Configuration<FacilityLocationConfigOverrides> configuration = new Configuration<>(
-                new RunConfiguration("BASIC"), new ModelConfig<>(new FacilityLocationConfigOverrides()));
+                new RunConfiguration("BASIC"), ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

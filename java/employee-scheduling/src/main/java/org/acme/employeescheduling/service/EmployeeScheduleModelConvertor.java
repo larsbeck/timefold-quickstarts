@@ -84,14 +84,24 @@ public class EmployeeScheduleModelConvertor
             return;
         }
         EmployeeScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(EmployeeSchedulingConstraintProvider.UNDESIRED_DAY_FOR_EMPLOYEE,
-                HardMediumSoftScore.ofSoft(overrides.undesiredDayForEmployeeWeight()));
-        weightOverrides.put(EmployeeSchedulingConstraintProvider.DESIRED_DAY_FOR_EMPLOYEE,
-                HardMediumSoftScore.ofSoft(overrides.desiredDayForEmployeeWeight()));
-        weightOverrides.put(EmployeeSchedulingConstraintProvider.BALANCE_EMPLOYEE_SHIFT_ASSIGNMENTS,
-                HardMediumSoftScore.ofSoft(overrides.balanceEmployeeShiftAssignmentsWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, EmployeeSchedulingConstraintProvider.UNDESIRED_DAY_FOR_EMPLOYEE,
+                overrides.undesiredDayForEmployeeWeight());
+        putIfPresent(weights, EmployeeSchedulingConstraintProvider.DESIRED_DAY_FOR_EMPLOYEE,
+                overrides.desiredDayForEmployeeWeight());
+        putIfPresent(weights, EmployeeSchedulingConstraintProvider.BALANCE_EMPLOYEE_SHIFT_ASSIGNMENTS,
+                overrides.balanceEmployeeShiftAssignmentsWeight());
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<Shift> shifts, Map<String, Employee> employeeMap,

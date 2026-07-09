@@ -102,12 +102,22 @@ public class FlightCrewScheduleModelConvertor
             return;
         }
         FlightCrewScheduleConfigOverrides overrides = modelConfig.overrides();
-        Map<String, HardMediumSoftScore> weightOverrides = new HashMap<>();
-        weightOverrides.put(FlightCrewSchedulingConstraintProvider.FIRST_ASSIGNMENT_NOT_DEPARTING_FROM_HOME,
-                HardMediumSoftScore.ofSoft(overrides.firstAssignmentNotDepartingFromHomeWeight()));
-        weightOverrides.put(FlightCrewSchedulingConstraintProvider.LAST_ASSIGNMENT_NOT_ARRIVING_AT_HOME,
-                HardMediumSoftScore.ofSoft(overrides.lastAssignmentNotArrivingAtHomeWeight()));
-        schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weightOverrides));
+        // Only apply weights that are actually set (non-null) in the merged overrides. A null weight means the
+        // input did not override it, so the configuration profile value (or the constraint's default) is kept.
+        Map<String, HardMediumSoftScore> weights = new HashMap<>();
+        putIfPresent(weights, FlightCrewSchedulingConstraintProvider.FIRST_ASSIGNMENT_NOT_DEPARTING_FROM_HOME,
+                overrides.firstAssignmentNotDepartingFromHomeWeight());
+        putIfPresent(weights, FlightCrewSchedulingConstraintProvider.LAST_ASSIGNMENT_NOT_ARRIVING_AT_HOME,
+                overrides.lastAssignmentNotArrivingAtHomeWeight());
+        if (!weights.isEmpty()) {
+            schedule.setConstraintWeightOverrides(ConstraintWeightOverrides.of(weights));
+        }
+    }
+
+    private static void putIfPresent(Map<String, HardMediumSoftScore> weights, String constraintName, Long weight) {
+        if (weight != null) {
+            weights.put(constraintName, HardMediumSoftScore.ofSoft(weight));
+        }
     }
 
     private static void applyLastOutput(List<FlightAssignment> flightAssignments, Map<String, Employee> employeeMap,

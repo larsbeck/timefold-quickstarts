@@ -24,8 +24,11 @@ public class DemoDataGenerator
                 .addCrew("Beta crew")
                 .addCrew("Gamma crew")
                 .build();
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a MaintenanceScheduleConfigOverrides and set only those.
         Configuration<MaintenanceScheduleConfigOverrides> configuration = new Configuration<>(
-                new RunConfiguration("BASIC"), new ModelConfig<>(new MaintenanceScheduleConfigOverrides()));
+                new RunConfiguration("BASIC"), ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }

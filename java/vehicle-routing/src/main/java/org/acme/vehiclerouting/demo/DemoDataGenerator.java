@@ -26,8 +26,10 @@ public class DemoDataGenerator
         VehicleRoutingInput problem = DemoDataBuilder.builder().build();
         SolverTerminationConfig termination = new SolverTerminationConfig(DEMO_SPENT_LIMIT, null);
         RunConfiguration runConfiguration = new RunConfiguration("BASIC", termination);
-        VehicleRoutingConfigOverrides overrides = new VehicleRoutingConfigOverrides();
-        ModelConfig<VehicleRoutingConfigOverrides> modelConfig = new ModelConfig<>(overrides);
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a VehicleRoutingConfigOverrides and set only those.
+        ModelConfig<VehicleRoutingConfigOverrides> modelConfig = ModelConfig.empty();
         Configuration<VehicleRoutingConfigOverrides> configuration = new Configuration<>(runConfiguration, modelConfig);
         return new ModelRequest<>(configuration, problem);
     }

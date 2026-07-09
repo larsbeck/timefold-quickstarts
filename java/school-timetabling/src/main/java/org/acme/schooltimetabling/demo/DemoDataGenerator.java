@@ -56,8 +56,11 @@ public class DemoDataGenerator
                 .addLesson(ENGLISH, CRUZ, GRADE_10)
                 .addLesson(SPANISH, CRUZ, GRADE_10)
                 .build();
+        // Ship no constraint weight overrides in the demo input, so that any overrides coming from the
+        // configuration profile are applied instead of being masked. Callers that want to override
+        // specific weights via the input can build a TimetableConfigOverrides and set only those.
         Configuration<TimetableConfigOverrides> configuration = new Configuration<>(
-                new RunConfiguration("BASIC"), new ModelConfig<>(new TimetableConfigOverrides()));
+                new RunConfiguration("BASIC"), ModelConfig.empty());
         return new ModelRequest<>(configuration, problem);
     }
 }
