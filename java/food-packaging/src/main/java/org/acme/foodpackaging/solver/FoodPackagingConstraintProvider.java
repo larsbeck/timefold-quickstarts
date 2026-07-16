@@ -11,6 +11,11 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.foodpackaging.domain.Job;
+import org.acme.foodpackaging.domain.justification.IdealEndDateTimeJustification;
+import org.acme.foodpackaging.domain.justification.JobNotAssignedJustification;
+import org.acme.foodpackaging.domain.justification.MakespanJustification;
+import org.acme.foodpackaging.domain.justification.MaxEndDateTimeJustification;
+import org.acme.foodpackaging.domain.justification.OperatorCleaningConflictJustification;
 
 public class FoodPackagingConstraintProvider implements ConstraintProvider {
 
@@ -45,6 +50,8 @@ public class FoodPackagingConstraintProvider implements ConstraintProvider {
                 .filter(job -> job.getEndDateTime() != null && job.getMaxEndTime().isBefore(job.getEndDateTime()))
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         job -> (int) Duration.between(job.getMaxEndTime(), job.getEndDateTime()).toMinutes())
+                .justifyWith((job, score) -> new MaxEndDateTimeJustification(job,
+                        Duration.between(job.getMaxEndTime(), job.getEndDateTime()).toMinutes()))
                 .asConstraint(new ConstraintInfo(MAX_END_DATE_TIME, MAX_END_DATE_TIME,
                         "A job must finish before its maximum end time.",
                         FoodPackagingConstraintGroup.SCHEDULE_FEASIBILITY));
@@ -59,6 +66,10 @@ public class FoodPackagingConstraintProvider implements ConstraintProvider {
                         (j1, j2) -> (int) overlapMinutes(
                                 j1.getStartCleaningDateTime(), j1.getStartProductionDateTime(),
                                 j2.getStartCleaningDateTime(), j2.getStartProductionDateTime()))
+                .justifyWith((j1, j2, score) -> new OperatorCleaningConflictJustification(j1, j2,
+                        overlapMinutes(
+                                j1.getStartCleaningDateTime(), j1.getStartProductionDateTime(),
+                                j2.getStartCleaningDateTime(), j2.getStartProductionDateTime())))
                 .asConstraint(new ConstraintInfo(OPERATOR_CLEANING_CONFLICT, OPERATOR_CLEANING_CONFLICT,
                         "An operator cannot be assigned to a job during their cleaning time.",
                         FoodPackagingConstraintGroup.SCHEDULE_FEASIBILITY));
@@ -80,6 +91,8 @@ public class FoodPackagingConstraintProvider implements ConstraintProvider {
                 .filter(job -> job.getEndDateTime() != null && job.getIdealEndTime().isBefore(job.getEndDateTime()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
                         job -> (int) Duration.between(job.getIdealEndTime(), job.getEndDateTime()).toMinutes())
+                .justifyWith((job, score) -> new IdealEndDateTimeJustification(job,
+                        Duration.between(job.getIdealEndTime(), job.getEndDateTime()).toMinutes()))
                 .asConstraint(new ConstraintInfo(IDEAL_END_DATE_TIME, IDEAL_END_DATE_TIME,
                         "A job should ideally finish before its ideal end time.",
                         FoodPackagingConstraintGroup.DELIVERY_PERFORMANCE));
@@ -89,6 +102,7 @@ public class FoodPackagingConstraintProvider implements ConstraintProvider {
         return factory.forEachIncludingUnassigned(Job.class)
                 .filter(job -> job.getLine() == null)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM, job -> (int) job.getDuration().toMinutes())
+                .justifyWith((job, score) -> new JobNotAssignedJustification(job, job.getDuration().toMinutes()))
                 .asConstraint(new ConstraintInfo(MAXIMIZE_JOBS_ASSIGNED, MAXIMIZE_JOBS_ASSIGNED,
                         "Assign as many jobs as possible.",
                         FoodPackagingConstraintGroup.DELIVERY_PERFORMANCE));
@@ -106,6 +120,8 @@ public class FoodPackagingConstraintProvider implements ConstraintProvider {
                             Duration.between(job.getLine().getStartDateTime(), job.getEndDateTime()).toMinutes();
                     return (int) (minutes * minutes);
                 })
+                .justifyWith((job, score) -> new MakespanJustification(job,
+                        Duration.between(job.getLine().getStartDateTime(), job.getEndDateTime()).toMinutes()))
                 .asConstraint(new ConstraintInfo(MINIMIZE_MAKESPAN, MINIMIZE_MAKESPAN,
                         "Minimize the total production time.",
                         FoodPackagingConstraintGroup.EFFICIENCY));

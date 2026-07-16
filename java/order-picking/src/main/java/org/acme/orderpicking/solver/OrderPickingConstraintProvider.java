@@ -11,6 +11,10 @@ import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
 import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.orderpicking.domain.PickTask;
+import org.acme.orderpicking.domain.justification.DistanceFromPreviousPickJustification;
+import org.acme.orderpicking.domain.justification.DistanceToPathOriginJustification;
+import org.acme.orderpicking.domain.justification.OrderSplitByTrolleyJustification;
+import org.acme.orderpicking.domain.justification.RequiredNumberOfBucketsJustification;
 
 /**
  * Constraint definitions for solving the order picking problem.
@@ -63,6 +67,8 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
                 .filter((trolley, trolleyTotalBuckets) -> trolley.getBucketCount() < trolleyTotalBuckets)
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         (trolley, trolleyTotalBuckets) -> trolleyTotalBuckets - trolley.getBucketCount())
+                .justifyWith((trolley, trolleyTotalBuckets, score) -> new RequiredNumberOfBucketsJustification(trolley,
+                        trolleyTotalBuckets))
                 .asConstraint(new ConstraintInfo(REQUIRED_NUMBER_OF_BUCKETS, REQUIRED_NUMBER_OF_BUCKETS,
                         "A trolley must have enough buckets to hold all order items assigned to it.",
                         OrderPickingConstraintGroup.BUCKET_CAPACITY));
@@ -77,6 +83,8 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
                         countDistinct(PickTask::getTrolley))
                 .penalize(HardMediumSoftScore.ONE_SOFT,
                         (order, trolleySpreadCount) -> trolleySpreadCount * ORDER_SPLIT_PENALTY)
+                .justifyWith((order, trolleySpreadCount, score) -> new OrderSplitByTrolleyJustification(order,
+                        trolleySpreadCount))
                 .asConstraint(new ConstraintInfo(MINIMIZE_ORDER_SPLIT_BY_TROLLEY, MINIMIZE_ORDER_SPLIT_BY_TROLLEY,
                         "An order should ideally be picked by a single trolley.",
                         OrderPickingConstraintGroup.ORDER_INTEGRITY));
@@ -97,6 +105,13 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
                                     : pick.getTrolley().getLocation();
                             return calculateDistance(previousLocation, pick.getLocation());
                         })
+                .justifyWith((pick, score) -> {
+                    var previousLocation = pick.getPreviousPickTask() != null
+                            ? pick.getPreviousPickTask().getLocation()
+                            : pick.getTrolley().getLocation();
+                    return new DistanceFromPreviousPickJustification(pick,
+                            calculateDistance(previousLocation, pick.getLocation()));
+                })
                 .asConstraint(new ConstraintInfo(MINIMIZE_DISTANCE_FROM_PREVIOUS_PICK, MINIMIZE_DISTANCE_FROM_PREVIOUS_PICK,
                         "Minimize the distance travelled between consecutive picks of a trolley.",
                         OrderPickingConstraintGroup.TRAVEL_EFFICIENCY));
@@ -113,6 +128,8 @@ public class OrderPickingConstraintProvider implements ConstraintProvider {
                 .filter(PickTask::isLast)
                 .penalize(HardMediumSoftScore.ONE_SOFT,
                         pick -> calculateDistance(pick.getLocation(), pick.getTrolley().getLocation()))
+                .justifyWith((pick, score) -> new DistanceToPathOriginJustification(pick,
+                        calculateDistance(pick.getLocation(), pick.getTrolley().getLocation())))
                 .asConstraint(new ConstraintInfo(MINIMIZE_DISTANCE_TO_PATH_ORIGIN, MINIMIZE_DISTANCE_TO_PATH_ORIGIN,
                         "Minimize the distance travelled by a trolley returning to its origin after the last pick.",
                         OrderPickingConstraintGroup.TRAVEL_EFFICIENCY));

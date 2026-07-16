@@ -11,6 +11,12 @@ import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.flightcrewscheduling.domain.Employee;
 import org.acme.flightcrewscheduling.domain.FlightAssignment;
+import org.acme.flightcrewscheduling.domain.justification.EmployeeUnavailabilityJustification;
+import org.acme.flightcrewscheduling.domain.justification.FirstAssignmentNotDepartingFromHomeJustification;
+import org.acme.flightcrewscheduling.domain.justification.FlightConflictJustification;
+import org.acme.flightcrewscheduling.domain.justification.LastAssignmentNotArrivingAtHomeJustification;
+import org.acme.flightcrewscheduling.domain.justification.RequiredSkillJustification;
+import org.acme.flightcrewscheduling.domain.justification.TransferBetweenTwoFlightsJustification;
 
 public class FlightCrewSchedulingConstraintProvider implements ConstraintProvider {
 
@@ -40,6 +46,7 @@ public class FlightCrewSchedulingConstraintProvider implements ConstraintProvide
         return constraintFactory.forEach(FlightAssignment.class)
                 .filter(flightAssignment -> !flightAssignment.hasRequiredSkills())
                 .penalize(HardMediumSoftScore.ofHard(100))
+                .justifyWith((flightAssignment, score) -> new RequiredSkillJustification(flightAssignment))
                 .asConstraint(new ConstraintInfo(REQUIRED_SKILL, REQUIRED_SKILL,
                         "An employee must have the skill required by the flight assignment.",
                         FlightCrewSchedulingConstraintGroup.CREW_FEASIBILITY));
@@ -51,6 +58,8 @@ public class FlightCrewSchedulingConstraintProvider implements ConstraintProvide
                 Joiners.overlapping(flightAssignment -> flightAssignment.getFlight().getDepartureUTCDateTime(),
                         flightAssignment -> flightAssignment.getFlight().getArrivalUTCDateTime()))
                 .penalize(HardMediumSoftScore.ofHard(10))
+                .justifyWith((flightAssignment, flightAssignment2, score) -> new FlightConflictJustification(
+                        flightAssignment, flightAssignment2))
                 .asConstraint(new ConstraintInfo(FLIGHT_CONFLICT, FLIGHT_CONFLICT,
                         "An employee cannot be assigned to two overlapping flights at the same time.",
                         FlightCrewSchedulingConstraintGroup.CREW_FEASIBILITY));
@@ -76,6 +85,8 @@ public class FlightCrewSchedulingConstraintProvider implements ConstraintProvide
                         flightAssignment2) -> !flightAssignment.getFlight().getArrivalAirport()
                                 .equals(flightAssignment2.getFlight().getDepartureAirport()))
                 .penalize(HardMediumSoftScore.ofHard(1))
+                .justifyWith((flightAssignment, flightAssignment2, score) -> new TransferBetweenTwoFlightsJustification(
+                        flightAssignment, flightAssignment2))
                 .asConstraint(new ConstraintInfo(TRANSFER_BETWEEN_TWO_FLIGHTS, TRANSFER_BETWEEN_TWO_FLIGHTS,
                         "Two consecutive flights of an employee must connect at the same airport.",
                         FlightCrewSchedulingConstraintGroup.CREW_FEASIBILITY));
@@ -85,6 +96,7 @@ public class FlightCrewSchedulingConstraintProvider implements ConstraintProvide
         return constraintFactory.forEach(FlightAssignment.class)
                 .filter(FlightAssignment::isUnavailableEmployee)
                 .penalize(HardMediumSoftScore.ofHard(10))
+                .justifyWith((flightAssignment, score) -> new EmployeeUnavailabilityJustification(flightAssignment))
                 .asConstraint(new ConstraintInfo(EMPLOYEE_UNAVAILABLE, EMPLOYEE_UNAVAILABLE,
                         "An employee must not be assigned to a flight on a day they are unavailable.",
                         FlightCrewSchedulingConstraintGroup.CREW_FEASIBILITY));
@@ -101,6 +113,8 @@ public class FlightCrewSchedulingConstraintProvider implements ConstraintProvide
                         flightAssignment) -> !employee.getHomeAirport()
                                 .equals(flightAssignment.getFlight().getDepartureAirport()))
                 .penalize(HardMediumSoftScore.ofSoft(1000))
+                .justifyWith((employee, flightAssignment, score) -> new FirstAssignmentNotDepartingFromHomeJustification(
+                        employee, flightAssignment))
                 .asConstraint(new ConstraintInfo(FIRST_ASSIGNMENT_NOT_DEPARTING_FROM_HOME,
                         FIRST_ASSIGNMENT_NOT_DEPARTING_FROM_HOME,
                         "An employee's first flight of the schedule should depart from their home airport.",
@@ -118,6 +132,8 @@ public class FlightCrewSchedulingConstraintProvider implements ConstraintProvide
                         flightAssignment) -> !employee.getHomeAirport()
                                 .equals(flightAssignment.getFlight().getArrivalAirport()))
                 .penalize(HardMediumSoftScore.ofSoft(1000))
+                .justifyWith((employee, flightAssignment, score) -> new LastAssignmentNotArrivingAtHomeJustification(
+                        employee, flightAssignment))
                 .asConstraint(new ConstraintInfo(LAST_ASSIGNMENT_NOT_ARRIVING_AT_HOME,
                         LAST_ASSIGNMENT_NOT_ARRIVING_AT_HOME,
                         "An employee's last flight of the schedule should arrive at their home airport.",

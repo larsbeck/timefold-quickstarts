@@ -10,6 +10,10 @@ import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 import org.acme.taskassigning.domain.Employee;
 import org.acme.taskassigning.domain.Priority;
 import org.acme.taskassigning.domain.Task;
+import org.acme.taskassigning.domain.justification.MakespanJustification;
+import org.acme.taskassigning.domain.justification.MissingSkillsJustification;
+import org.acme.taskassigning.domain.justification.PriorityTaskEndTimeJustification;
+import org.acme.taskassigning.domain.justification.UnassignedTaskJustification;
 
 public class TaskAssigningConstraintProvider implements ConstraintProvider {
 
@@ -43,6 +47,7 @@ public class TaskAssigningConstraintProvider implements ConstraintProvider {
                 .filter(task -> task.getMissingSkillCount() > 0)
                 .penalize(BendableScore.ofHard(BENDABLE_SCORE_HARD_LEVELS_SIZE, BENDABLE_SCORE_SOFT_LEVELS_SIZE, 0, 1),
                         Task::getMissingSkillCount)
+                .justifyWith((task, score) -> new MissingSkillsJustification(task))
                 .asConstraint(new ConstraintInfo(NO_MISSING_SKILLS, NO_MISSING_SKILLS,
                         "A task must be assigned to an employee who has all the required skills.",
                         TaskAssigningConstraintGroup.SKILLS));
@@ -52,6 +57,7 @@ public class TaskAssigningConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEachIncludingUnassigned(Task.class)
                 .filter(task -> task.getEmployee() == null)
                 .penalize(BendableScore.ofSoft(BENDABLE_SCORE_HARD_LEVELS_SIZE, BENDABLE_SCORE_SOFT_LEVELS_SIZE, 0, 1))
+                .justifyWith((task, score) -> new UnassignedTaskJustification(task))
                 .asConstraint(new ConstraintInfo(MINIMIZE_UNASSIGNED_TASKS, MINIMIZE_UNASSIGNED_TASKS,
                         "Every task should ideally be assigned to an employee.",
                         TaskAssigningConstraintGroup.TASK_ASSIGNMENT));
@@ -67,6 +73,7 @@ public class TaskAssigningConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(Employee.class)
                 .penalize(BendableScore.ofSoft(BENDABLE_SCORE_HARD_LEVELS_SIZE, BENDABLE_SCORE_SOFT_LEVELS_SIZE, 1, 1),
                         employee -> employee.getEndTime() * employee.getEndTime())
+                .justifyWith((employee, score) -> new MakespanJustification(employee))
                 .asConstraint(new ConstraintInfo(MINIMIZE_MAKESPAN, MINIMIZE_MAKESPAN,
                         "Balance the workload by penalizing the squared end time of every employee.",
                         TaskAssigningConstraintGroup.MAKESPAN));
@@ -76,6 +83,7 @@ public class TaskAssigningConstraintProvider implements ConstraintProvider {
         return getTaskWithPriority(constraintFactory, Priority.CRITICAL)
                 .penalize(BendableScore.ofSoft(BENDABLE_SCORE_HARD_LEVELS_SIZE, BENDABLE_SCORE_SOFT_LEVELS_SIZE, 2, 1),
                         task -> task.getEndTime() * 4)
+                .justifyWith((task, score) -> new PriorityTaskEndTimeJustification(task))
                 .asConstraint(new ConstraintInfo(CRITICAL_PRIORITY_TASK_END_TIME, CRITICAL_PRIORITY_TASK_END_TIME,
                         "Finish critical priority tasks as early as possible.",
                         TaskAssigningConstraintGroup.PRIORITY));
@@ -85,6 +93,7 @@ public class TaskAssigningConstraintProvider implements ConstraintProvider {
         return getTaskWithPriority(constraintFactory, Priority.MAJOR)
                 .penalize(BendableScore.ofSoft(BENDABLE_SCORE_HARD_LEVELS_SIZE, BENDABLE_SCORE_SOFT_LEVELS_SIZE, 2, 1),
                         task -> task.getEndTime() * 2)
+                .justifyWith((task, score) -> new PriorityTaskEndTimeJustification(task))
                 .asConstraint(new ConstraintInfo(MAJOR_PRIORITY_TASK_END_TIME, MAJOR_PRIORITY_TASK_END_TIME,
                         "Finish major priority tasks as early as possible.",
                         TaskAssigningConstraintGroup.PRIORITY));
@@ -94,6 +103,7 @@ public class TaskAssigningConstraintProvider implements ConstraintProvider {
         return getTaskWithPriority(constraintFactory, Priority.MINOR)
                 .penalize(BendableScore.ofSoft(BENDABLE_SCORE_HARD_LEVELS_SIZE, BENDABLE_SCORE_SOFT_LEVELS_SIZE, 2, 1),
                         Task::getEndTime)
+                .justifyWith((task, score) -> new PriorityTaskEndTimeJustification(task))
                 .asConstraint(new ConstraintInfo(MINOR_PRIORITY_TASK_END_TIME, MINOR_PRIORITY_TASK_END_TIME,
                         "Finish minor priority tasks as early as possible.",
                         TaskAssigningConstraintGroup.PRIORITY));

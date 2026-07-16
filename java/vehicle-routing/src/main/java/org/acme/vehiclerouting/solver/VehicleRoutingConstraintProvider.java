@@ -8,6 +8,10 @@ import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.domain.Visit;
+import org.acme.vehiclerouting.domain.justification.MinimizeTravelTimeJustification;
+import org.acme.vehiclerouting.domain.justification.ServiceFinishedAfterMaxEndTimeJustification;
+import org.acme.vehiclerouting.domain.justification.UnassignedVisitJustification;
+import org.acme.vehiclerouting.domain.justification.VehicleCapacityJustification;
 
 public class VehicleRoutingConstraintProvider implements ConstraintProvider {
 
@@ -40,6 +44,9 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                 .filter(vehicle -> vehicle.getTotalDemand() > vehicle.getCapacity())
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         vehicle -> vehicle.getTotalDemand() - vehicle.getCapacity())
+                .justifyWith((vehicle, score) -> new VehicleCapacityJustification(vehicle.getId(),
+                        vehicle.getCapacity(), vehicle.getTotalDemand(),
+                        vehicle.getTotalDemand() - vehicle.getCapacity()))
                 .asConstraint(new ConstraintInfo(VEHICLE_CAPACITY, VEHICLE_CAPACITY,
                         "A vehicle must not carry more demand than its capacity.",
                         VehicleRoutingConstraintGroup.CAPACITY));
@@ -50,6 +57,8 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                 .filter(Visit::isServiceFinishedAfterMaxEndTime)
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         Visit::getServiceFinishedDelayInMinutes)
+                .justifyWith((visit, score) -> new ServiceFinishedAfterMaxEndTimeJustification(visit.getId(),
+                        visit.getServiceFinishedDelayInMinutes()))
                 .asConstraint(new ConstraintInfo(SERVICE_FINISHED_AFTER_MAX_END_TIME, SERVICE_FINISHED_AFTER_MAX_END_TIME,
                         "A visit must be serviced before its time window closes.",
                         VehicleRoutingConstraintGroup.TIME_WINDOWS));
@@ -63,6 +72,8 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
         return factory.forEachIncludingUnassigned(Visit.class)
                 .filter(visit -> visit.getVehicle() == null)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM, visit -> visit.getServiceDuration().toMinutes())
+                .justifyWith((visit, score) -> new UnassignedVisitJustification(visit.getId(),
+                        visit.getServiceDuration().toMinutes()))
                 .asConstraint(new ConstraintInfo(MAXIMIZE_VISITS_ASSIGNED, MAXIMIZE_VISITS_ASSIGNED,
                         "Every visit should ideally be assigned to a vehicle.",
                         VehicleRoutingConstraintGroup.VISIT_ASSIGNMENT));
@@ -76,6 +87,8 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
         return factory.forEach(Vehicle.class)
                 .penalize(HardMediumSoftScore.ONE_SOFT,
                         Vehicle::getTotalDrivingTimeSeconds)
+                .justifyWith((vehicle, score) -> new MinimizeTravelTimeJustification(vehicle.getId(),
+                        vehicle.getTotalDrivingTimeSeconds()))
                 .asConstraint(new ConstraintInfo(MINIMIZE_TRAVEL_TIME, MINIMIZE_TRAVEL_TIME,
                         "Minimize the total driving time across all vehicles.",
                         VehicleRoutingConstraintGroup.TRAVEL_TIME));

@@ -11,6 +11,12 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.schooltimetabling.domain.Lesson;
+import org.acme.schooltimetabling.domain.justification.RoomConflictJustification;
+import org.acme.schooltimetabling.domain.justification.StudentGroupConflictJustification;
+import org.acme.schooltimetabling.domain.justification.StudentGroupSubjectVarietyJustification;
+import org.acme.schooltimetabling.domain.justification.TeacherConflictJustification;
+import org.acme.schooltimetabling.domain.justification.TeacherRoomStabilityJustification;
+import org.acme.schooltimetabling.domain.justification.TeacherTimeEfficiencyJustification;
 
 public class TimetableConstraintProvider implements ConstraintProvider {
 
@@ -39,6 +45,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         Joiners.equal(Lesson::getTimeslot),
                         Joiners.equal(Lesson::getRoom))
                 .penalize(HardMediumSoftScore.ONE_HARD)
+                .justifyWith((lesson1, lesson2, score) -> new RoomConflictJustification(lesson1, lesson2))
                 .asConstraint(new ConstraintInfo(ROOM_CONFLICT, ROOM_CONFLICT,
                         "A room can accommodate at most one lesson at the same time.",
                         TimetableConstraintGroup.CONFLICT_AVOIDANCE));
@@ -50,6 +57,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         Joiners.equal(Lesson::getTimeslot),
                         Joiners.equal(Lesson::getTeacher))
                 .penalize(HardMediumSoftScore.ONE_HARD)
+                .justifyWith((lesson1, lesson2, score) -> new TeacherConflictJustification(lesson1, lesson2))
                 .asConstraint(new ConstraintInfo(TEACHER_CONFLICT, TEACHER_CONFLICT,
                         "A teacher can teach at most one lesson at the same time.",
                         TimetableConstraintGroup.CONFLICT_AVOIDANCE));
@@ -61,6 +69,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         Joiners.equal(Lesson::getTimeslot),
                         Joiners.equal(Lesson::getStudentGroup))
                 .penalize(HardMediumSoftScore.ONE_HARD)
+                .justifyWith((lesson1, lesson2, score) -> new StudentGroupConflictJustification(lesson1, lesson2))
                 .asConstraint(new ConstraintInfo(STUDENT_GROUP_CONFLICT, STUDENT_GROUP_CONFLICT,
                         "A student group can attend at most one lesson at the same time.",
                         TimetableConstraintGroup.CONFLICT_AVOIDANCE));
@@ -72,6 +81,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         Joiners.equal(Lesson::getTeacher))
                 .filter((lesson1, lesson2) -> !Objects.equals(lesson1.getRoom(), lesson2.getRoom()))
                 .penalize(HardMediumSoftScore.ONE_SOFT)
+                .justifyWith((lesson1, lesson2, score) -> new TeacherRoomStabilityJustification(lesson1, lesson2))
                 .asConstraint(new ConstraintInfo(TEACHER_ROOM_STABILITY, TEACHER_ROOM_STABILITY,
                         "A teacher prefers to teach in a single room.",
                         TimetableConstraintGroup.TEACHER_PREFERENCES));
@@ -88,6 +98,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                     return !between.isNegative() && between.compareTo(Duration.ofMinutes(30)) <= 0;
                 })
                 .reward(HardMediumSoftScore.ONE_SOFT)
+                .justifyWith((lesson1, lesson2, score) -> new TeacherTimeEfficiencyJustification(lesson1, lesson2))
                 .asConstraint(new ConstraintInfo(TEACHER_TIME_EFFICIENCY, TEACHER_TIME_EFFICIENCY,
                         "A teacher prefers to teach sequential lessons and dislikes gaps between lessons.",
                         TimetableConstraintGroup.TEACHER_PREFERENCES));
@@ -106,6 +117,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                     return !between.isNegative() && between.compareTo(Duration.ofMinutes(30)) <= 0;
                 })
                 .penalize(HardMediumSoftScore.ONE_SOFT)
+                .justifyWith((lesson1, lesson2, score) -> new StudentGroupSubjectVarietyJustification(lesson1, lesson2))
                 .asConstraint(new ConstraintInfo(STUDENT_GROUP_SUBJECT_VARIETY, STUDENT_GROUP_SUBJECT_VARIETY,
                         "A student group dislikes sequential lessons on the same subject.",
                         TimetableConstraintGroup.STUDENT_PREFERENCES));

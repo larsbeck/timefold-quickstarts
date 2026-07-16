@@ -14,6 +14,10 @@ import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 import org.acme.tournamentschedule.domain.Team;
 import org.acme.tournamentschedule.domain.TeamAssignment;
 import org.acme.tournamentschedule.domain.UnavailabilityPenalty;
+import org.acme.tournamentschedule.domain.justification.EvenlyConfrontationCountJustification;
+import org.acme.tournamentschedule.domain.justification.FairAssignmentCountPerTeamJustification;
+import org.acme.tournamentschedule.domain.justification.OneAssignmentPerDatePerTeamJustification;
+import org.acme.tournamentschedule.domain.justification.UnavailabilityPenaltyJustification;
 
 public class TournamentScheduleConstraintProvider implements ConstraintProvider {
 
@@ -39,6 +43,8 @@ public class TournamentScheduleConstraintProvider implements ConstraintProvider 
                         equal(TeamAssignment::getDay),
                         lessThan(TeamAssignment::getId))
                 .penalize(HardMediumSoftScore.ONE_HARD)
+                .justifyWith((assignment, otherAssignment, score) -> new OneAssignmentPerDatePerTeamJustification(
+                        assignment, otherAssignment))
                 .asConstraint(new ConstraintInfo(ONE_ASSIGNMENT_PER_DATE_PER_TEAM, ONE_ASSIGNMENT_PER_DATE_PER_TEAM,
                         "A team can be assigned at most once per day.",
                         TournamentScheduleConstraintGroup.CONFLICT_AVOIDANCE));
@@ -50,6 +56,7 @@ public class TournamentScheduleConstraintProvider implements ConstraintProvider 
                         equal(UnavailabilityPenalty::getTeam, TeamAssignment::getTeam),
                         equal(UnavailabilityPenalty::getDay, TeamAssignment::getDay))
                 .penalize(HardMediumSoftScore.ONE_HARD)
+                .justifyWith((penalty, score) -> new UnavailabilityPenaltyJustification(penalty))
                 .asConstraint(new ConstraintInfo(UNAVAILABILITY_PENALTY, UNAVAILABILITY_PENALTY,
                         "A team must not be assigned on a day on which it is unavailable.",
                         TournamentScheduleConstraintGroup.AVAILABILITY));
@@ -59,6 +66,7 @@ public class TournamentScheduleConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(TeamAssignment.class)
                 .groupBy(loadBalance(TeamAssignment::getTeam))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM, TournamentScheduleConstraintProvider::scaledUnfairness)
+                .justifyWith((loadBalance, score) -> new FairAssignmentCountPerTeamJustification(loadBalance))
                 .asConstraint(new ConstraintInfo(FAIR_ASSIGNMENT_COUNT_PER_TEAM, FAIR_ASSIGNMENT_COUNT_PER_TEAM,
                         "Balance the number of assignments across all teams.",
                         TournamentScheduleConstraintGroup.FAIRNESS));
@@ -72,6 +80,7 @@ public class TournamentScheduleConstraintProvider implements ConstraintProvider 
                 .groupBy(loadBalance(
                         (assignment, otherAssignment) -> new TeamPair(assignment.getTeam(), otherAssignment.getTeam())))
                 .penalize(HardMediumSoftScore.ONE_SOFT, TournamentScheduleConstraintProvider::scaledUnfairness)
+                .justifyWith((loadBalance, score) -> new EvenlyConfrontationCountJustification(loadBalance))
                 .asConstraint(new ConstraintInfo(EVENLY_CONFRONTATION_COUNT, EVENLY_CONFRONTATION_COUNT,
                         "Balance how often each pair of teams confronts each other.",
                         TournamentScheduleConstraintGroup.FAIRNESS));

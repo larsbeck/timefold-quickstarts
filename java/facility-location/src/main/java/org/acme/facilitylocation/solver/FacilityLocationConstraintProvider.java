@@ -11,6 +11,9 @@ import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.facilitylocation.domain.Consumer;
 import org.acme.facilitylocation.domain.Facility;
+import org.acme.facilitylocation.domain.justification.DistanceFromFacilityJustification;
+import org.acme.facilitylocation.domain.justification.FacilityCapacityJustification;
+import org.acme.facilitylocation.domain.justification.FacilitySetupCostJustification;
 
 public class FacilityLocationConstraintProvider implements ConstraintProvider {
 
@@ -28,6 +31,7 @@ public class FacilityLocationConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(Consumer.class).groupBy(Consumer::getFacility, sum(Consumer::getDemand))
                 .filter((facility, demand) -> demand > facility.getCapacity())
                 .penalize(ONE_HARD, (facility, demand) -> demand - facility.getCapacity())
+                .justifyWith((facility, demand, score) -> new FacilityCapacityJustification(facility, demand))
                 .asConstraint(new ConstraintInfo(FACILITY_CAPACITY, FACILITY_CAPACITY,
                         "A facility must not be assigned more demand than its capacity.",
                         FacilityLocationConstraintGroup.RESOURCE_LIMITED_PLANNING));
@@ -36,6 +40,7 @@ public class FacilityLocationConstraintProvider implements ConstraintProvider {
     Constraint setupCost(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Consumer.class).groupBy(Consumer::getFacility)
                 .penalize(HardMediumSoftScore.ofSoft(2), Facility::getSetupCost)
+                .justifyWith((facility, score) -> new FacilitySetupCostJustification(facility))
                 .asConstraint(new ConstraintInfo(FACILITY_SETUP_COST, FACILITY_SETUP_COST,
                         "Penalize the setup cost of every facility that is used.",
                         FacilityLocationConstraintGroup.COST_MANAGEMENT));
@@ -44,6 +49,7 @@ public class FacilityLocationConstraintProvider implements ConstraintProvider {
     Constraint distanceFromFacility(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Consumer.class).filter(Consumer::isAssigned)
                 .penalize(HardMediumSoftScore.ofSoft(5), Consumer::distanceFromFacility)
+                .justifyWith((consumer, score) -> new DistanceFromFacilityJustification(consumer))
                 .asConstraint(new ConstraintInfo(DISTANCE_FROM_FACILITY, DISTANCE_FROM_FACILITY,
                         "Reduce the distance between each consumer and its assigned facility.",
                         FacilityLocationConstraintGroup.TRAVEL_AND_DISTANCE));

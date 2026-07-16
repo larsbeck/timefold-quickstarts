@@ -15,6 +15,12 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.maintenancescheduling.domain.Job;
+import org.acme.maintenancescheduling.domain.justification.AfterIdealEndDateJustification;
+import org.acme.maintenancescheduling.domain.justification.BeforeIdealEndDateJustification;
+import org.acme.maintenancescheduling.domain.justification.CrewConflictJustification;
+import org.acme.maintenancescheduling.domain.justification.MaxEndDateJustification;
+import org.acme.maintenancescheduling.domain.justification.MinStartDateJustification;
+import org.acme.maintenancescheduling.domain.justification.TagConflictJustification;
 
 public class MaintenanceScheduleConstraintProvider implements ConstraintProvider {
 
@@ -58,6 +64,14 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                                 job1.getEndDate().isBefore(job2.getEndDate())
                                         ? job1.getEndDate()
                                         : job2.getEndDate()))
+                .justifyWith((job1, job2, score) -> new CrewConflictJustification(job1, job2,
+                        (int) DAYS.between(
+                                job1.getStartDate().isAfter(job2.getStartDate())
+                                        ? job1.getStartDate()
+                                        : job2.getStartDate(),
+                                job1.getEndDate().isBefore(job2.getEndDate())
+                                        ? job1.getEndDate()
+                                        : job2.getEndDate())))
                 .asConstraint(new ConstraintInfo(CREW_CONFLICT, CREW_CONFLICT,
                         "A crew can do at most one maintenance job at the same time.",
                         MaintenanceScheduleConstraintGroup.CONFLICT_AVOIDANCE));
@@ -70,6 +84,8 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                         && job.getStartDate().isBefore(job.getMinStartDate()))
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         job -> (int) DAYS.between(job.getStartDate(), job.getMinStartDate()))
+                .justifyWith((job, score) -> new MinStartDateJustification(job,
+                        (int) DAYS.between(job.getStartDate(), job.getMinStartDate())))
                 .asConstraint(new ConstraintInfo(MIN_START_DATE, MIN_START_DATE,
                         "Don't start a maintenance job before it is ready to start.",
                         MaintenanceScheduleConstraintGroup.DEADLINES));
@@ -82,6 +98,8 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                         && job.getEndDate().isAfter(job.getMaxEndDate()))
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         job -> (int) DAYS.between(job.getMaxEndDate(), job.getEndDate()))
+                .justifyWith((job, score) -> new MaxEndDateJustification(job,
+                        (int) DAYS.between(job.getMaxEndDate(), job.getEndDate())))
                 .asConstraint(new ConstraintInfo(MAX_END_DATE, MAX_END_DATE,
                         "Don't end a maintenance job after it is due.",
                         MaintenanceScheduleConstraintGroup.DEADLINES));
@@ -98,6 +116,8 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                         && job.getEndDate().isBefore(job.getIdealEndDate()))
                 .penalize(HardMediumSoftScore.ofSoft(1),
                         job -> (int) DAYS.between(job.getEndDate(), job.getIdealEndDate()))
+                .justifyWith((job, score) -> new BeforeIdealEndDateJustification(job,
+                        (int) DAYS.between(job.getEndDate(), job.getIdealEndDate())))
                 .asConstraint(new ConstraintInfo(BEFORE_IDEAL_END_DATE, BEFORE_IDEAL_END_DATE,
                         "Early maintenance is expensive because it needs to happen again sooner.",
                         MaintenanceScheduleConstraintGroup.PREFERENCES));
@@ -110,6 +130,8 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                         && job.getEndDate().isAfter(job.getIdealEndDate()))
                 .penalize(HardMediumSoftScore.ofSoft(1_000_000),
                         job -> (int) DAYS.between(job.getIdealEndDate(), job.getEndDate()))
+                .justifyWith((job, score) -> new AfterIdealEndDateJustification(job,
+                        (int) DAYS.between(job.getIdealEndDate(), job.getEndDate())))
                 .asConstraint(new ConstraintInfo(AFTER_IDEAL_END_DATE, AFTER_IDEAL_END_DATE,
                         "Late maintenance is risky because delays can push it over the due date.",
                         MaintenanceScheduleConstraintGroup.PREFERENCES));
@@ -134,6 +156,18 @@ public class MaintenanceScheduleConstraintProvider implements ConstraintProvider
                                             : job2.getEndDate());
                             return (int) (intersection.size() * overlap);
                         })
+                .justifyWith((job1, job2, score) -> {
+                    Set<String> intersection = new HashSet<>(job1.getTags());
+                    intersection.retainAll(job2.getTags());
+                    int overlap = (int) DAYS.between(
+                            job1.getStartDate().isAfter(job2.getStartDate())
+                                    ? job1.getStartDate()
+                                    : job2.getStartDate(),
+                            job1.getEndDate().isBefore(job2.getEndDate())
+                                    ? job1.getEndDate()
+                                    : job2.getEndDate());
+                    return new TagConflictJustification(job1, job2, intersection, overlap);
+                })
                 .asConstraint(new ConstraintInfo(TAG_CONFLICT, TAG_CONFLICT,
                         "Avoid overlapping maintenance jobs with the same tag.",
                         MaintenanceScheduleConstraintGroup.CONFLICT_AVOIDANCE));

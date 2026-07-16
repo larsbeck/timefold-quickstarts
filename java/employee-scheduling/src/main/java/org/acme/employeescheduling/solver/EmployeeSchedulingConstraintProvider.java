@@ -17,6 +17,14 @@ import ai.timefold.solver.service.definition.api.description.ConstraintInfo;
 
 import org.acme.employeescheduling.domain.Employee;
 import org.acme.employeescheduling.domain.Shift;
+import org.acme.employeescheduling.domain.justification.BalanceEmployeeShiftAssignmentsJustification;
+import org.acme.employeescheduling.domain.justification.DesiredDayJustification;
+import org.acme.employeescheduling.domain.justification.OneShiftPerDayJustification;
+import org.acme.employeescheduling.domain.justification.OverlappingShiftJustification;
+import org.acme.employeescheduling.domain.justification.RequiredSkillJustification;
+import org.acme.employeescheduling.domain.justification.RestBetweenShiftsJustification;
+import org.acme.employeescheduling.domain.justification.UnavailableEmployeeJustification;
+import org.acme.employeescheduling.domain.justification.UndesiredDayJustification;
 
 public class EmployeeSchedulingConstraintProvider implements ConstraintProvider {
 
@@ -56,6 +64,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(Shift.class)
                 .filter(shift -> !shift.getEmployee().getSkills().contains(shift.getRequiredSkill()))
                 .penalize(HardMediumSoftScore.ONE_HARD)
+                .justifyWith((shift, score) -> new RequiredSkillJustification(shift))
                 .asConstraint(new ConstraintInfo(REQUIRED_SKILL, REQUIRED_SKILL,
                         "An employee must have the required skill to cover a shift.",
                         EmployeeScheduleConstraintGroup.SHIFT_COVERAGE));
@@ -66,6 +75,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 overlapping(Shift::getStart, Shift::getEnd))
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         EmployeeSchedulingConstraintProvider::getMinuteOverlap)
+                .justifyWith((firstShift, secondShift, score) -> new OverlappingShiftJustification(firstShift,
+                        secondShift, getMinuteOverlap(firstShift, secondShift)))
                 .asConstraint(new ConstraintInfo(NO_OVERLAPPING_SHIFTS, NO_OVERLAPPING_SHIFTS,
                         "An employee cannot cover two shifts that overlap in time.",
                         EmployeeScheduleConstraintGroup.SHIFT_COVERAGE));
@@ -82,6 +93,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                                     Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
                             return 600L - breakLength;
                         })
+                .justifyWith((firstShift, secondShift, score) -> new RestBetweenShiftsJustification(firstShift,
+                        secondShift, Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes()))
                 .asConstraint(new ConstraintInfo(AT_LEAST_10_HOURS_BETWEEN_TWO_SHIFTS,
                         AT_LEAST_10_HOURS_BETWEEN_TWO_SHIFTS,
                         "An employee must have at least 10 hours rest between two consecutive shifts.",
@@ -92,6 +105,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEachUniquePair(Shift.class, equal(Shift::getEmployee),
                 equal(shift -> shift.getStart().toLocalDate()))
                 .penalize(HardMediumSoftScore.ONE_HARD)
+                .justifyWith((firstShift, secondShift, score) -> new OneShiftPerDayJustification(firstShift,
+                        secondShift))
                 .asConstraint(new ConstraintInfo(ONE_SHIFT_PER_DAY, ONE_SHIFT_PER_DAY,
                         "An employee can only cover one shift per day.",
                         EmployeeScheduleConstraintGroup.SHIFT_COVERAGE));
@@ -103,6 +118,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .flattenLast(Employee::getUnavailableDates)
                 .filter(Shift::isOverlappingWithDate)
                 .penalize(HardMediumSoftScore.ONE_HARD, Shift::getOverlappingDurationInMinutes)
+                .justifyWith((shift, date, score) -> new UnavailableEmployeeJustification(shift, date,
+                        shift.getOverlappingDurationInMinutes(date)))
                 .asConstraint(new ConstraintInfo(UNAVAILABLE_EMPLOYEE, UNAVAILABLE_EMPLOYEE,
                         "An employee cannot be assigned to a shift on a day they are unavailable.",
                         EmployeeScheduleConstraintGroup.EMPLOYEE_AVAILABILITY));
@@ -114,6 +131,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .flattenLast(Employee::getUndesiredDates)
                 .filter(Shift::isOverlappingWithDate)
                 .penalize(HardMediumSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
+                .justifyWith((shift, date, score) -> new UndesiredDayJustification(shift, date,
+                        shift.getOverlappingDurationInMinutes(date)))
                 .asConstraint(new ConstraintInfo(UNDESIRED_DAY_FOR_EMPLOYEE, UNDESIRED_DAY_FOR_EMPLOYEE,
                         "An employee should not be assigned to a shift on a day they would prefer not to work.",
                         EmployeeScheduleConstraintGroup.EMPLOYEE_AVAILABILITY));
@@ -125,6 +144,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .flattenLast(Employee::getDesiredDates)
                 .filter(Shift::isOverlappingWithDate)
                 .reward(HardMediumSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
+                .justifyWith((shift, date, score) -> new DesiredDayJustification(shift, date,
+                        shift.getOverlappingDurationInMinutes(date)))
                 .asConstraint(new ConstraintInfo(DESIRED_DAY_FOR_EMPLOYEE, DESIRED_DAY_FOR_EMPLOYEE,
                         "An employee should be assigned to a shift on a day they would prefer to work.",
                         EmployeeScheduleConstraintGroup.EMPLOYEE_AVAILABILITY));
@@ -138,6 +159,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                         (employee, shiftCount) -> shiftCount))
                 .penalize(HardMediumSoftScore.ONE_SOFT,
                         loadBalance -> loadBalance.unfairness().movePointRight(6).longValue())
+                .justifyWith((loadBalance, score) -> new BalanceEmployeeShiftAssignmentsJustification(
+                        loadBalance.unfairness().movePointRight(6).longValue()))
                 .asConstraint(new ConstraintInfo(BALANCE_EMPLOYEE_SHIFT_ASSIGNMENTS,
                         BALANCE_EMPLOYEE_SHIFT_ASSIGNMENTS,
                         "Distribute shifts fairly across all employees.",
